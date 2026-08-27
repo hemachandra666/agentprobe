@@ -1,9 +1,15 @@
-"""Week 2 entrypoint: run each task N times, aggregate, print the report."""
-from __future__ import annotations
-from . import agent, scorer
-from .task_suite import TASKS
+"""Week 2 entrypoint: run each task N times, aggregate, print, and emit spans.
 
-RUNS_PER_TASK = 5  # raise for tighter numbers, lower for speed
+Usage:
+  uv run python -m agentprobe.run_eval                 # default 5 runs
+  uv run python -m agentprobe.run_eval --runs 20       # 20 runs per task
+  uv run python -m agentprobe.run_eval --runs 20 --clear   # wipe spans first
+"""
+from __future__ import annotations
+import argparse
+from . import agent, scorer, spans
+from .task_suite import TASKS
+from .model import DEFAULT_MODEL
 
 
 def aggregate(task, trajs) -> dict:
@@ -16,7 +22,6 @@ def aggregate(task, trajs) -> dict:
         "avg_step_eff": round(sum(s["step_efficiency"] for s in scores) / n, 3),
         "loop_rate": round(sum(1 for s in scores if s["loops"] > 0) / n, 3),
         "avg_error_rate": round(sum(s["error_rate"] for s in scores) / n, 3),
-        # of the runs that had an error, how many still finished cleanly
         "recovery_rate": round(
             (sum(1 for s in errored if s["recovered"]) / len(errored)) if errored else 1.0, 3
         ),
@@ -24,13 +29,28 @@ def aggregate(task, trajs) -> dict:
     }
 
 
+def parse_args():
+    p = argparse.ArgumentParser(description="Run the AgentProbe evaluation suite.")
+    p.add_argument("--runs", type=int, default=5, help="runs per task (default 5)")
+    p.add_argument("--clear", action="store_true", help="wipe the span file before running")
+    return p.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
+    model = DEFAULT_MODEL
+
+    if args.clear and spans.SPANS_PATH.exists():
+        spans.SPANS_PATH.unlink()
+
+    print(f"Running {len(TASKS)} tasks x {args.runs} runs on {model} ...")
     rows = []
     for task in TASKS:
         trajs = []
-        for i in range(RUNS_PER_TASK):
+        for i in range(args.runs):
             traj = agent.run(task.task_id, task.question)
             traj.save(f"traces/{task.task_id}_run{i}.json")
+            spans.write_trajectory(traj, run_index=i, model=model)
             trajs.append(traj)
         rows.append(aggregate(task, trajs))
 
