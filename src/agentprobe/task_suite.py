@@ -1,18 +1,25 @@
-"""Three fixed tasks with known-good reference trajectories."""
+"""Loads the task suite from tasks/suite.yaml."""
 from __future__ import annotations
 from dataclasses import dataclass
+from pathlib import Path
+import yaml
 
 
 @dataclass
 class Task:
     task_id: str
     question: str
-    reference_tools: list[str]  # the ideal tool path
-    min_steps: int              # fewest steps a perfect agent needs
+    reference_tools: list[str]
+    min_steps: int
 
 
-TASKS = [
-    Task("t1", "What is 6 times 7?", ["multiply"], 1),
-    Task("t2", "What is 5 plus 9?", ["add"], 1),
-    Task("t3", "Add 3 and 4, then multiply the result by 2.", ["add", "multiply"], 2),
-]
+SUITE_PATH = Path(__file__).resolve().parents[2] / "tasks" / "suite.yaml"
+
+
+def load_tasks(path: Path = SUITE_PATH) -> list[Task]:
+    with open(path) as f:
+        raw = yaml.safe_load(f)
+    return [Task(**item) for item in raw]
+
+
+TASKS = load_tasks()

@@ -27,7 +27,15 @@ def run(task_id: str, question: str) -> Trajectory:
             name = call["function"]["name"]
             args = call["function"]["arguments"]
             fn = tools.REGISTRY.get(name)
-            result = fn(**args) if fn else f"error: unknown tool {name}"
+            try:
+                if fn is None:
+                    result = f"error: unknown tool {name}"
+                elif not isinstance(args, dict):
+                    result = f"error: bad arguments, expected an object, got {type(args).__name__}"
+                else:
+                    result = fn(**args)
+            except Exception as e:
+                result = f"error: {e}"
             traj.add_step(name, args, result)
             messages.append({"role": "tool", "content": str(result), "name": name})
 

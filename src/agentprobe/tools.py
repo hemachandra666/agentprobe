@@ -1,19 +1,26 @@
-"""Deterministic tools the agent can call. Predictable by design."""
+"""Deterministic tools the agent can call. Predictable and input-tolerant."""
 from __future__ import annotations
 
 
-def add(a: float, b: float) -> float:
-    return a + b
+def _num(x):
+    """Coerce a tool argument to a float, or raise a clear error."""
+    if isinstance(x, (int, float)):
+        return float(x)
+    if isinstance(x, str):
+        return float(x.strip())
+    raise ValueError(f"expected a number, got {type(x).__name__}: {x!r}")
 
 
-def multiply(a: float, b: float) -> float:
-    return a * b
+def add(a, b) -> float:
+    return _num(a) + _num(b)
 
 
-# Registry: maps a tool name to the actual function.
+def multiply(a, b) -> float:
+    return _num(a) * _num(b)
+
+
 REGISTRY = {"add": add, "multiply": multiply}
 
-# Schemas: how we describe each tool to the model for tool-calling.
 SCHEMAS = [
     {
         "type": "function",

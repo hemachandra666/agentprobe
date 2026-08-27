@@ -1,0 +1,40 @@
+# AgentProbe task suite. Each task has an ideal tool path and the minimum steps.
+- task_id: t1
+  question: "What is 6 times 7?"
+  reference_tools: [multiply]
+  min_steps: 1
+
+- task_id: t2
+  question: "What is 5 plus 9?"
+  reference_tools: [add]
+  min_steps: 1
+
+- task_id: t3
+  question: "Add 3 and 4, then multiply the result by 2."
+  reference_tools: [add, multiply]
+  min_steps: 2
+
+- task_id: t4
+  question: "Multiply 8 by 3, then add 5 to that result."
+  reference_tools: [multiply, add]
+  min_steps: 2
+
+- task_id: t5
+  question: "Add 10 and 15, then add 4 more to the total."
+  reference_tools: [add, add]
+  min_steps: 2
+
+- task_id: t6
+  question: "Multiply 2 by 6, then multiply that result by 4."
+  reference_tools: [multiply, multiply]
+  min_steps: 2
+
+- task_id: t7
+  question: "Add 7 and 8, multiply the result by 3, then add 2."
+  reference_tools: [add, multiply, add]
+  min_steps: 3
+
+- task_id: t8
+  question: "Multiply 5 by 5, add 10 to it, then multiply the total by 2."
+  reference_tools: [multiply, add, multiply]
+  min_steps: 3
