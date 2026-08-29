@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-08-29 09:23:20",
+  "runs_per_task": 3,
+  "num_tasks": 8,
+  "models": [
+    {
+      "model": "qwen2.5:7b",
+      "avg_traj": 0.958,
+      "avg_step_eff": 0.969,
+      "loop_rate": 0.0,
+      "error_rate": 0.028,
+      "recovery_rate": 0.0,
+      "total_runs": 24
+    },
+    {
+      "model": "llama3.1:8b",
+      "avg_traj": 0.75,
+      "avg_step_eff": 0.875,
+      "loop_rate": 0.0,
+      "error_rate": 0.132,
+      "recovery_rate": 0.0,
+      "total_runs": 24
+    },
+    {
+      "model": "nemotron-mini:4b",
+      "avg_traj": 0.424,
+      "avg_step_eff": 0.625,
+      "loop_rate": 0.0,
+      "error_rate": 0.583,
+      "recovery_rate": 0.0,
+      "total_runs": 24
+    },
+    {
+      "model": "mistral:7b",
+      "avg_traj": 0.736,
+      "avg_step_eff": 0.938,
+      "loop_rate": 0.083,
+      "error_rate": 0.049,
+      "recovery_rate": 0.0,
+      "total_runs": 24
+    }
+  ]
+}

@@ -1,15 +1,17 @@
-"""Multi-family benchmark: run the suite across several models and compare.
+"""Multi-family benchmark: run the suite across several models, save results.
 
 Usage:
   uv run python -m agentprobe.benchmark
   uv run python -m agentprobe.benchmark --runs 10
 """
 from __future__ import annotations
-import argparse
+import argparse, json, time
+from pathlib import Path
 from . import agent, scorer, spans
 from .task_suite import TASKS
 
 MODELS = ["qwen2.5:7b", "llama3.1:8b", "nemotron-mini:4b", "mistral:7b"]
+RESULTS_PATH = Path(__file__).resolve().parents[2] / "results.json"
 
 
 def bench_model(model: str, runs: int) -> dict:
@@ -45,18 +47,28 @@ def parse_args():
 def main() -> None:
     args = parse_args()
     if spans.SPANS_PATH.exists():
-        spans.SPANS_PATH.unlink()  # fresh spans for a clean benchmark
+        spans.SPANS_PATH.unlink()
 
     rows = []
     for m in MODELS:
         print(f"benchmarking {m} ({len(TASKS)} tasks x {args.runs} runs) ...")
         rows.append(bench_model(m, args.runs))
 
+    # save results for the dashboard to read
+    output = {
+        "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "runs_per_task": args.runs,
+        "num_tasks": len(TASKS),
+        "models": rows,
+    }
+    RESULTS_PATH.write_text(json.dumps(output, indent=2))
+
     print(f"\n{'model':18} {'avg_traj':>9} {'avg_step':>9} {'loop_rt':>8} {'err_rt':>7} {'recov':>7} {'runs':>5}")
     print("-" * 72)
     for r in rows:
         print(f"{r['model']:18} {r['avg_traj']:>9} {r['avg_step_eff']:>9} "
               f"{r['loop_rate']:>8} {r['error_rate']:>7} {r['recovery_rate']:>7} {r['total_runs']:>5}")
+    print(f"\nsaved results to {RESULTS_PATH.name}")
 
 
 if __name__ == "__main__":
