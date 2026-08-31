@@ -1,7 +1,7 @@
 [project]
 name = "agentprobe"
 version = "0.1.0"
-description = "Add your description here"
+description = "Trajectory-level evaluation and distillation verification for open-weight agents"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -10,9 +10,6 @@ dependencies = [
     "pyyaml>=6.0.3",
     "streamlit>=1.62.0",
 ]
-
-[project.scripts]
-agentprobe = "agentprobe:main"
 
 [build-system]
 requires = ["uv_build>=0.12.6,<0.13.0"]
