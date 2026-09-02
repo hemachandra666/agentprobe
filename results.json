@@ -1,43 +1,43 @@
 {
-  "generated_at": "2026-08-29 09:23:20",
+  "generated_at": "2026-09-02 13:54:43",
   "runs_per_task": 3,
-  "num_tasks": 8,
+  "num_tasks": 15,
   "models": [
     {
       "model": "qwen2.5:7b",
-      "avg_traj": 0.958,
-      "avg_step_eff": 0.969,
+      "avg_traj": 1.0,
+      "avg_step_eff": 1.0,
       "loop_rate": 0.0,
-      "error_rate": 0.028,
+      "error_rate": 0.015,
       "recovery_rate": 0.0,
-      "total_runs": 24
+      "total_runs": 45
     },
     {
       "model": "llama3.1:8b",
-      "avg_traj": 0.75,
-      "avg_step_eff": 0.875,
+      "avg_traj": 0.589,
+      "avg_step_eff": 0.837,
       "loop_rate": 0.0,
-      "error_rate": 0.132,
-      "recovery_rate": 0.0,
-      "total_runs": 24
+      "error_rate": 0.174,
+      "recovery_rate": 0.1,
+      "total_runs": 45
     },
     {
       "model": "nemotron-mini:4b",
-      "avg_traj": 0.424,
-      "avg_step_eff": 0.625,
-      "loop_rate": 0.0,
-      "error_rate": 0.583,
+      "avg_traj": 0.549,
+      "avg_step_eff": 0.778,
+      "loop_rate": 0.044,
+      "error_rate": 0.778,
       "recovery_rate": 0.0,
-      "total_runs": 24
+      "total_runs": 45
     },
     {
       "model": "mistral:7b",
-      "avg_traj": 0.736,
-      "avg_step_eff": 0.938,
-      "loop_rate": 0.083,
-      "error_rate": 0.049,
-      "recovery_rate": 0.0,
-      "total_runs": 24
+      "avg_traj": 0.671,
+      "avg_step_eff": 0.813,
+      "loop_rate": 0.067,
+      "error_rate": 0.174,
+      "recovery_rate": 0.25,
+      "total_runs": 45
     }
   ]
 }

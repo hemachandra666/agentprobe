@@ -1,4 +1,4 @@
-# AgentProbe task suite. Each task has an ideal tool path and the minimum steps.
+# Kept task suite. Each task has an ideal tool path and the minimum steps.
 - task_id: t1
   question: "What is 6 times 7?"
   reference_tools: [multiply]
@@ -38,3 +38,38 @@
   question: "Multiply 5 by 5, add 10 to it, then multiply the total by 2."
   reference_tools: [multiply, add, multiply]
   min_steps: 3
+
+- task_id: t9
+  question: "Add 4 and 6, multiply the result by 2, add 3, then multiply by 5."
+  reference_tools: [add, multiply, add, multiply]
+  min_steps: 4
+
+- task_id: t10
+  question: "Multiply 3 by 3, add 1, multiply by 4, then add 2."
+  reference_tools: [multiply, add, multiply, add]
+  min_steps: 4
+
+- task_id: t11
+  question: "Add 9 and 1, add 5, multiply by 2, then multiply by 3."
+  reference_tools: [add, add, multiply, multiply]
+  min_steps: 4
+
+- task_id: t12
+  question: "Multiply 2 by 2, multiply by 2, multiply by 2, then add 1."
+  reference_tools: [multiply, multiply, multiply, add]
+  min_steps: 4
+
+- task_id: t13
+  question: "Add 5 and 5, multiply by 3, add 10, multiply by 2, then add 4."
+  reference_tools: [add, multiply, add, multiply, add]
+  min_steps: 5
+
+- task_id: t14
+  question: "Multiply 4 by 2, add 6, multiply by 3, add 1, then multiply by 2."
+  reference_tools: [multiply, add, multiply, add, multiply]
+  min_steps: 5
+
+- task_id: t15
+  question: "Add 1 and 2, add 3, add 4, add 5, then multiply by 10."
+  reference_tools: [add, add, add, add, multiply]
+  min_steps: 5
