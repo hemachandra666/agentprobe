@@ -11,3 +11,6 @@ wheels/
 
 # Generated eval output
 traces/
+
+# Trained model artifacts
+student_lora/
