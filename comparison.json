@@ -1,0 +1,23 @@
+{
+  "models": [
+    {
+      "label": "teacher (qwen2.5:7b)",
+      "avg_traj": 0.964,
+      "avg_step_eff": 0.984,
+      "loop_rate": 0.022,
+      "error_rate": 0.012,
+      "recovery_rate": 1.0,
+      "total_runs": 45
+    },
+    {
+      "label": "student (1.5B distilled)",
+      "avg_traj": 0.989,
+      "avg_step_eff": 1.0,
+      "loop_rate": 0.0,
+      "error_rate": 0.0,
+      "recovery_rate": 1.0,
+      "total_runs": 45
+    }
+  ],
+  "runs_per_task": 3
+}

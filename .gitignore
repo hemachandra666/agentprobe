@@ -14,3 +14,7 @@ traces/
 
 # Trained model artifacts
 student_lora/
+
+# Model artifacts, never commit
+student_gguf/
+student_lora/
