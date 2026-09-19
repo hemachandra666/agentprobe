@@ -42,15 +42,21 @@ def _generate(question: str) -> str:
     inputs = tok.apply_chat_template(
         messages, tokenize=True, add_generation_prompt=True, return_tensors="pt"
     ).to("cuda")
-    out = model.generate(input_ids=inputs, max_new_tokens=200,
-                         temperature=0.1, pad_token_id=tok.eos_token_id)
-    return tok.decode(out[0][inputs.shape[1]:], skip_special_tokens=True)
+    out = model.generate(
+        input_ids=inputs,
+        attention_mask=(inputs != tok.pad_token_id).long(),
+        max_new_tokens=200,
+        temperature=0.1,
+        pad_token_id=tok.eos_token_id,
+    )
+    decoded = tok.decode(out[0][inputs.shape[1]:], skip_special_tokens=True)
+    return decoded if decoded is not None else ""
 
 
 def run(task_id: str, question: str, model: str = "student") -> Trajectory:
     """Ask the student, parse its tool calls, run REAL tools, log the trajectory."""
     traj = Trajectory(task_id=task_id)
-    text = _generate(question)
+    text = _generate(question) or ""
 
     for m in CALL_RE.finditer(text):
         name = m.group(1)
