@@ -124,3 +124,43 @@ def test_clean_two_step_has_no_loop():
     ])
     assert scorer.has_loop(traj) is False
     assert scorer.cycle_detected(traj) is False
+
+from agentprobe import tools
+
+
+def test_negative_and_scientific_notation_parse():
+    """Negatives and scientific notation are valid numbers."""
+    assert tools.add(-5, 3) == -2.0
+    assert tools.multiply("1e3", 2) == 2000.0
+    assert tools.add("-2.5", "0.5") == -2.0
+
+
+def test_non_finite_is_rejected():
+    """inf and nan must not be accepted as numbers."""
+    import pytest, math
+    with pytest.raises(ValueError):
+        tools._num(math.inf)
+    with pytest.raises(ValueError):
+        tools._num("nan")
+
+
+def test_bool_is_not_a_number():
+    """True/False must not be silently treated as 1/0."""
+    import pytest
+    with pytest.raises(ValueError):
+        tools._num(True)
+
+
+def test_malformed_arg_raises():
+    """A non-numeric string is a clear error, not a crash."""
+    import pytest
+    with pytest.raises(ValueError):
+        tools._num("not a number")
+
+
+def test_error_prefix_detection_is_centralized():
+    """is_error is the single check; a normal result is not an error."""
+    traj = make_traj("t", [("add", {"a": 3, "b": 4}, "7")])
+    assert scorer.is_error(traj.steps[0]) is False
+    traj2 = make_traj("t", [("add", {"a": 3}, "error: bad argument")])
+    assert scorer.is_error(traj2.steps[0]) is True

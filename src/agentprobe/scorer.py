@@ -8,13 +8,26 @@ New metrics actually validate the task: final-answer correctness and task succes
 
 P0-4 fix: loop detection now catches non-adjacent A-B-A-B cycles, and does not
 count a legitimate retry (a repeat right after an error) as a loop.
+
+P1-5 fix: one central is_error check instead of scattered startswith calls, and
+non-finite values (inf, nan) never count as a correct answer.
 """
 from __future__ import annotations
+import math
 from collections import Counter
 from .trajectory import Trajectory
 
 # A "task" here is anything with .reference_tools, .min_steps, and .answer.
 # The new generated tasks (task_gen.py) carry a true numeric .answer.
+
+
+def is_error(step) -> bool:
+    """The single source of truth for 'did this step error'.
+
+    Centralized so the error signal is not a fragile startswith scattered
+    across the file. A step errored if its result is our typed error string.
+    """
+    return str(step.result).startswith("error:")
 
 
 def _true_answer(task):
@@ -41,11 +54,10 @@ def tool_sequence_match(traj: Trajectory, task) -> float:
 def _final_numeric(traj: Trajectory):
     """The last successful tool result as a number, or None."""
     for s in reversed(traj.steps):
-        r = str(s.result)
-        if r.startswith("error:"):
+        if is_error(s):
             continue
         try:
-            return float(r)
+            return float(str(s.result))
         except ValueError:
             continue
     return None
@@ -54,14 +66,14 @@ def _final_numeric(traj: Trajectory):
 def answer_correct(traj: Trajectory, task) -> bool:
     """Did the agent's actual computed result equal the task's true answer?
 
-    This is the check the old scorer lacked. It uses the last real tool result,
-    which is what the tools actually computed, not the model's text.
+    Uses the last real tool result (what the tools computed, not the model's
+    text). Non-finite values (inf, nan) never count as correct (P1-5).
     """
     true = _true_answer(task)
-    if true is None:
+    if true is None or not math.isfinite(true):
         return False
     got = _final_numeric(traj)
-    if got is None:
+    if got is None or not math.isfinite(got):
         return False
     return abs(got - true) < 1e-6
 
@@ -76,7 +88,7 @@ def task_success(traj: Trajectory, task) -> bool:
     """
     if traj.step_count == 0:
         return False
-    if str(traj.steps[-1].result).startswith("error:"):
+    if is_error(traj.steps[-1]):
         return False  # ended on an error, did not recover
     return answer_correct(traj, task)
 
@@ -94,7 +106,7 @@ def step_efficiency(traj: Trajectory, task) -> float:
     return round(min(1.0, task.min_steps / traj.step_count), 3)
 
 
-def _is_retry(prev_result: str) -> bool:
+def _is_retry(prev_result) -> bool:
     """A repeat right after an error is a legitimate retry, not a loop."""
     return str(prev_result).startswith("error:")
 
@@ -135,7 +147,7 @@ def has_loop(traj: Trajectory) -> bool:
 
 
 def error_count(traj: Trajectory) -> int:
-    return sum(1 for s in traj.steps if str(s.result).startswith("error:"))
+    return sum(1 for s in traj.steps if is_error(s))
 
 
 def error_rate(traj: Trajectory) -> float:
