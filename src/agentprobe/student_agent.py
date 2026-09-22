@@ -1,9 +1,12 @@
-"""Student provider: the distilled model in the SAME shared loop as the teacher (P0-3).
+"""Student providers for the shared loop (P0-3, P0-5).
 
-The student emits tool calls as text. Here it generates ONE action at a time,
-sees the real tool result, then generates the next, exactly like the teacher.
-Its own final answer is recorded separately; invalid text is a recorded failure,
-never silently dropped.
+Two providers:
+  - StudentProvider:     the distilled (fine-tuned) student, uses the LoRA adapter.
+  - BaseStudentProvider: the SAME 1.5B base model with NO fine-tuning (the control).
+
+Comparing tuned vs untuned isolates exactly what distillation added. Both emit
+tool calls as text; the shared engine parses ONE action at a time, runs the real
+tool, and feeds the observation back before the next action.
 """
 from __future__ import annotations
 import re
@@ -13,28 +16,37 @@ from . import engine
 
 ROOT = Path(__file__).resolve().parents[2]
 ADAPTER_DIR = str(ROOT / "student_lora")
+BASE_MODEL = "unsloth/Qwen2.5-1.5B-Instruct"
 
-# one tool call:  multiply(a=6, b=7)  or  add(b=3, a=15)
 CALL_RE = re.compile(r"(add|multiply)\(\s*([ab])\s*=\s*(-?\d+\.?\d*)\s*,\s*([ab])\s*=\s*(-?\d+\.?\d*)\s*\)")
-# a final answer line the student was trained to emit
 ANSWER_RE = re.compile(r"Answer:\s*(.+)", re.IGNORECASE)
 
-_model = None
-_tokenizer = None
+# separate caches for the two models
+_tuned = None      # (model, tokenizer) with the LoRA adapter
+_base = None       # (model, tokenizer) plain base, no adapter
 
 
-def _load():
-    global _model, _tokenizer
-    if _model is None:
-        _model, _tokenizer = FastLanguageModel.from_pretrained(
-            model_name=ADAPTER_DIR, max_seq_length=2048, load_in_4bit=True,
-        )
-        FastLanguageModel.for_inference(_model)
-    return _model, _tokenizer
+def _load_tuned():
+    global _tuned
+    if _tuned is None:
+        m, t = FastLanguageModel.from_pretrained(
+            model_name=ADAPTER_DIR, max_seq_length=2048, load_in_4bit=True)
+        FastLanguageModel.for_inference(m)
+        _tuned = (m, t)
+    return _tuned
 
 
-def _generate(question: str, history: list) -> str:
-    model, tok = _load()
+def _load_base():
+    global _base
+    if _base is None:
+        m, t = FastLanguageModel.from_pretrained(
+            model_name=BASE_MODEL, max_seq_length=2048, load_in_4bit=True)
+        FastLanguageModel.for_inference(m)
+        _base = (m, t)
+    return _base
+
+
+def _generate(model, tok, question: str, history: list) -> str:
     messages = [{"role": "system", "content": engine.SYSTEM},
                 {"role": "user", "content": question}]
     for role, content in history:
@@ -52,31 +64,52 @@ def _generate(question: str, history: list) -> str:
     return decoded or ""
 
 
-class StudentProvider(engine.Provider):
+class _TextStudent(engine.Provider):
+    """Shared logic: generate text, parse ONE new tool call, or a final answer."""
     def __init__(self):
-        self._executed: set[str] = set()  # track calls already made this run
+        self._executed: set[str] = set()
+
+    def _model(self):
+        raise NotImplementedError
 
     def act(self, question: str, history: list) -> engine.Action:
-        text = _generate(question, history)
+        model, tok = self._model()
+        text = _generate(model, tok, question, history)
 
-        # find the FIRST tool call in the generated text that we have not run yet
         for m in CALL_RE.finditer(text):
-            k1, v1, k2, v2 = m.group(2), m.group(3), m.group(4), m.group(5)
             sig = m.group(0)
             if sig in self._executed:
                 continue
             self._executed.add(sig)
+            k1, v1, k2, v2 = m.group(2), m.group(3), m.group(4), m.group(5)
             args = {k1: float(v1), k2: float(v2)}
             return engine.Action(tool=m.group(1), args=args, final_answer=None, raw=text)
 
-        # no new tool call: does it state a final answer?
         am = ANSWER_RE.search(text)
         if am:
             return engine.Action(tool=None, args=None, final_answer=am.group(1).strip(), raw=text)
 
-        # produced neither a new call nor an answer: a recorded failure, not silent
         return engine.Action(tool=None, args=None, final_answer=text.strip()[:80], raw=text)
+
+
+class StudentProvider(_TextStudent):
+    """The distilled (fine-tuned) student."""
+    def _model(self):
+        return _load_tuned()
+
+
+class BaseStudentProvider(_TextStudent):
+    """The untuned control: same 1.5B base, no fine-tuning."""
+    def _model(self):
+        return _load_base()
 
 
 def run(task_id: str, question: str, model: str = "student"):
     return engine.run(task_id, question, StudentProvider())
+
+
+if __name__ == "__main__":
+    from .tasks_io import load_test
+    task = load_test()[0]
+    t = run(task.task_id, task.question)
+    print(f"tools={t.tool_sequence()} steps={t.step_count} answer={t.final_answer!r}")

@@ -2,22 +2,32 @@
   "models": [
     {
       "label": "teacher (qwen2.5:7b)",
-      "avg_traj": 0.975,
-      "avg_step_eff": 0.986,
-      "loop_rate": 0.007,
-      "error_rate": 0.012,
-      "recovery_rate": 0.714,
-      "total_runs": 300
+      "task_success_rate": 0.18,
+      "answer_correct_rate": 0.18,
+      "avg_step_efficiency": 1.0,
+      "error_rate": 0.0,
+      "loop_any_rate": 0.04,
+      "total_runs": 50
     },
     {
-      "label": "student (1.5B distilled)",
-      "avg_traj": 0.993,
-      "avg_step_eff": 1.0,
-      "loop_rate": 0.0,
+      "label": "untuned student (1.5B base)",
+      "task_success_rate": 0.0,
+      "answer_correct_rate": 0.0,
+      "avg_step_efficiency": null,
       "error_rate": 0.0,
-      "recovery_rate": 1.0,
-      "total_runs": 300
+      "loop_any_rate": 0.0,
+      "total_runs": 50
+    },
+    {
+      "label": "tuned student (1.5B distilled)",
+      "task_success_rate": 0.04,
+      "answer_correct_rate": 0.04,
+      "avg_step_efficiency": 0.5,
+      "error_rate": 0.0,
+      "loop_any_rate": 0.0,
+      "total_runs": 50
     }
   ],
-  "runs_per_task": 20
+  "runs_per_task": 1,
+  "num_test_tasks": 50
 }
