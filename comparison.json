@@ -2,11 +2,16 @@
   "models": [
     {
       "label": "teacher (qwen2.5:7b)",
-      "task_success_rate": 0.18,
-      "answer_correct_rate": 0.18,
-      "avg_step_efficiency": 1.0,
-      "error_rate": 0.0,
-      "loop_any_rate": 0.04,
+      "task_success_rate": 0.2,
+      "answer_correct_rate": 0.2,
+      "avg_step_efficiency": 0.967,
+      "error_rate_macro": 0.0,
+      "error_rate_macro_denominator_runs": 50,
+      "error_rate_micro": 0.0,
+      "error_rate_micro_denominator_calls": 70,
+      "loop_any_rate": 0.06,
+      "recovery_rate": null,
+      "errored_runs": 0,
       "total_runs": 50
     },
     {
@@ -14,8 +19,13 @@
       "task_success_rate": 0.0,
       "answer_correct_rate": 0.0,
       "avg_step_efficiency": null,
-      "error_rate": 0.0,
+      "error_rate_macro": 0.0,
+      "error_rate_macro_denominator_runs": 50,
+      "error_rate_micro": 0.0,
+      "error_rate_micro_denominator_calls": 0,
       "loop_any_rate": 0.0,
+      "recovery_rate": null,
+      "errored_runs": 0,
       "total_runs": 50
     },
     {
@@ -23,8 +33,13 @@
       "task_success_rate": 0.04,
       "answer_correct_rate": 0.04,
       "avg_step_efficiency": 0.5,
-      "error_rate": 0.0,
+      "error_rate_macro": 0.0,
+      "error_rate_macro_denominator_runs": 50,
+      "error_rate_micro": 0.0,
+      "error_rate_micro_denominator_calls": 215,
       "loop_any_rate": 0.0,
+      "recovery_rate": null,
+      "errored_runs": 0,
       "total_runs": 50
     }
   ],
