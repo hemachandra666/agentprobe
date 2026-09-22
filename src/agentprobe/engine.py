@@ -1,145 +1,118 @@
-"""One shared action-observation loop for every model (P0-3, hardened in P1-2, P1-3).
-
-Both teacher and student run here. The loop generates ONE action, validates it,
-executes the REAL tool, appends the ACTUAL observation, and continues. Invalid
-actions are recorded as failed steps, never silently dropped.
-
-P1-2: independent budgets (max steps, max calls, wall-time). Provider failures
-are caught and recorded with a termination reason, so a crashed call never loses
-the run. Response shape is validated before use.
-
-P1-3: every run carries timing, a termination reason, and produces a complete
-record (via run_record) even when it made zero tool calls or failed.
-"""
+"""Shared bounded action/observation loop. Never discard proposed actions."""
 from __future__ import annotations
-import time, uuid
+import time, queue, threading
 from dataclasses import dataclass
 from . import tools
+from .trajectory import Trajectory
 
-SCHEMA_VERSION = "1.0"
-
-SYSTEM = ("You are a calculator agent. Use the add and multiply tools to compute "
-          "step by step, then give the final number.")
-
+SCHEMA_VERSION = "2.0"
+SYSTEM = ('You are a calculator agent. Use add(a, b) and multiply(a, b). '
+          'Produce exactly ONE action per turn and wait for its real result. '
+          'For text tool calls output only add(a=NUMBER, b=NUMBER) or '
+          'multiply(a=NUMBER, b=NUMBER). When finished output only Answer: NUMBER. '
+          'Do not invent tool results or output a full plan.')
 
 @dataclass
 class Action:
-    """One parsed action from a model: a tool call, a final answer, or nothing."""
     tool: str | None
     args: dict | None
     final_answer: str | None
     raw: str
-
+    error: str | None = None
 
 class Provider:
-    """A backend must implement act(): given history, return the NEXT single Action."""
-    def act(self, question: str, history: list) -> Action:
+    def act(self, question, history):
         raise NotImplementedError
 
-
-def _execute(action: Action) -> str:
-    fn = tools.REGISTRY.get(action.tool)
-    if fn is None:
-        return f"error: unknown tool {action.tool}"
-    if not isinstance(action.args, dict):
-        return f"error: bad arguments, expected an object"
+def _execute(action):
+    if not isinstance(action.tool, str) or action.tool not in tools.REGISTRY:
+        return "unknown tool", "error"
+    if not isinstance(action.args, dict) or set(action.args) != {"a", "b"}:
+        return "expected arguments a and b", "error"
     try:
-        return str(fn(**action.args))
+        return str(tools.REGISTRY[action.tool](**action.args)), "ok"
     except Exception as e:
-        return f"error: {e}"
+        return str(e), "error"
 
+def _act_before_deadline(provider, question, history, seconds):
+    """Bound waiting; timed-out inference may continue in a daemon thread.
 
-def _valid_action(action) -> bool:
-    return isinstance(action, Action)
-
-
-def run(task_id: str, question: str, provider: Provider,
-        max_steps: int = 8, max_calls: int = 8, max_seconds: float = 60.0):
-    """Shared loop. Records timing, termination, and per-turn model text for P1-3.
-
-    history entries are tuples describing what happened:
-      ("call", tool, args)    the model called a tool
-      ("observation", result) the tool returned this
-      ("assistant", text)     the model produced plain text
+    Callers must stop the experiment after timeout to avoid overlapping GPU work.
+    Tool execution occurs only in the main loop, never in this worker.
     """
-    from .trajectory import Trajectory
-    traj = Trajectory(task_id=task_id)
-    history: list = []
-    responses: list = []          # every raw model response, for evidence (P1-3)
-    calls_made = 0
-    termination = "max_steps"
-    start = time.time()
-    start_mono = time.monotonic()
-
-    for _ in range(max_steps):
-        if calls_made >= max_calls:
-            termination = "max_calls"
-            break
-        if time.monotonic() - start_mono > max_seconds:
-            termination = "timeout"
-            break
-
+    result = queue.Queue(maxsize=1)
+    def invoke():
         try:
-            action = provider.act(question, history)
+            result.put((True, provider.act(question, list(history))))
         except Exception as e:
-            traj.add_step("(provider)", {}, f"error: provider failed: {e}")
-            termination = "provider_error"
+            result.put((False, e))
+    threading.Thread(target=invoke, daemon=True).start()
+    try:
+        ok, value = result.get(timeout=max(0, seconds))
+    except queue.Empty:
+        raise TimeoutError("provider exceeded run deadline")
+    if not ok:
+        raise value
+    return value
+
+def run(task_id, question, provider, max_steps=16, max_calls=8, max_seconds=60.0):
+    if max_steps < 1 or max_calls < 1 or max_seconds <= 0:
+        raise ValueError("budgets must be positive")
+    traj = Trajectory(task_id)
+    history = []
+    calls = 0
+    deadline = time.monotonic() + max_seconds
+    traj.termination = "max_steps"
+    for _ in range(max_steps):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            traj.termination = "timeout"
             break
-
-        if not _valid_action(action):
-            traj.add_step("(provider)", {}, "error: provider returned invalid action shape")
-            termination = "invalid_action_shape"
+        try:
+            action = _act_before_deadline(provider, question, history, remaining)
+        except TimeoutError:
+            traj.termination = "timeout"
             break
-
-        responses.append(action.raw)
-
-        if action.final_answer is not None and action.tool is None:
-            traj.final_answer = (action.final_answer or "").strip()
-            termination = "model_final"
+        except Exception as e:
+            traj.add_step("(provider)", {}, str(e), status="error", kind="provider")
+            traj.termination = "provider_error"
             break
-
-        if action.tool is None:
-            traj.add_step("(none)", {}, "error: no valid action produced")
-            history.append(("assistant", action.raw or ""))
-            calls_made += 1
+        if time.monotonic() >= deadline:
+            traj.termination = "timeout"
+            break
+        if (not isinstance(action, Action) or not isinstance(action.raw, str)
+                or (action.final_answer is not None and not isinstance(action.final_answer, str))):
+            traj.add_step("(provider)", {}, "invalid action shape", status="error", kind="parse")
+            traj.termination = "invalid_action_shape"
+            break
+        traj.responses.append(action.raw)
+        if action.error or (action.tool is not None and action.final_answer is not None):
+            traj.add_step("(parse)", {}, action.error or "ambiguous action", status="error", kind="parse")
+            history.append(("assistant", action.raw))
+            history.append(("observation", "error: output exactly one valid action"))
             continue
-
-        result = _execute(action)
-        traj.add_step(action.tool, action.args or {}, result)
-        history.append(("call", action.tool, action.args or {}))
-        history.append(("observation", result))
-        calls_made += 1
-
-    end = time.time()
-    traj.termination = termination                 # type: ignore[attr-defined]
-    traj.responses = responses                     # type: ignore[attr-defined]
-    traj.started_at = start                        # type: ignore[attr-defined]
-    traj.ended_at = end                            # type: ignore[attr-defined]
-    traj.run_id = uuid.uuid4().hex[:12]            # type: ignore[attr-defined]
+        if action.tool is None and action.final_answer is not None:
+            traj.final_answer = action.final_answer.strip()
+            traj.termination = "model_final" if traj.final_answer else "invalid_final"
+            break
+        if action.tool is None:
+            traj.add_step("(parse)", {}, "no action", status="error", kind="parse")
+            traj.termination = "invalid_action_shape"
+            break
+        if calls >= max_calls:
+            traj.termination = "max_calls"
+            break
+        result, status = _execute(action)
+        traj.add_step(action.tool, action.args, result, status=status)
+        history.extend([("call", action.tool, action.args),
+                        ("observation", result if status == "ok" else "error: " + result)])
+        calls += 1
+    traj.ended_at = time.time()
     return traj
 
-
 def run_record(traj, task, model_label, experiment_id, score):
-    """A complete, saveable record for ONE attempted run (P1-3).
-
-    Exists for EVERY attempt, including zero-call and failed runs.
-    """
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "experiment_id": experiment_id,
-        "run_id": getattr(traj, "run_id", None),
-        "model": model_label,
-        "task_id": task.task_id,
-        "family": task.family,
-        "question": task.question,
-        "true_answer": task.answer,
-        "started_at": getattr(traj, "started_at", None),
-        "ended_at": getattr(traj, "ended_at", None),
-        "duration_s": round(getattr(traj, "ended_at", 0) - getattr(traj, "started_at", 0), 3),
-        "termination": getattr(traj, "termination", None),
-        "num_steps": traj.step_count,
-        "steps": [{"tool": s.tool, "args": s.args, "result": str(s.result)} for s in traj.steps],
-        "model_responses": getattr(traj, "responses", []),
-        "final_answer": traj.final_answer,
-        "score": score,
-    }
+    return {"schema_version": SCHEMA_VERSION, "experiment_id": experiment_id,
+            "model": model_label, "family": task.family, "question": task.question,
+            "true_answer": task.answer, **traj.to_dict(), "num_steps": traj.step_count,
+            "duration_s": round((traj.ended_at or traj.started_at) - traj.started_at, 3),
+            "model_responses": traj.responses, "score": score}

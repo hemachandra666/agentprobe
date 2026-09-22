@@ -19,3 +19,13 @@ unsloth_compiled_cache/
 # Large intermediate data (regenerate via the pipeline)
 teacher_data.jsonl
 train_conversations.jsonl
+# Working experiment and training outputs
+runs/
+validation_conversations.jsonl
+training_split.json
+data/
+.wheel-smoke/
+/backups/
+/.venv-gpu/
+/student_lora/
+/unsloth_compiled_cache/

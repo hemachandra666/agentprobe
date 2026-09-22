@@ -1,58 +1,53 @@
-"""Format honest teacher trajectories into training conversations.
-
-Uses the correct-answer-gated teacher_data.jsonl (P0-2). The real unseen-task
-test set already lives in data/test_tasks.jsonl (P0-1), so this only turns the
-teacher's SUCCESSFUL trajectories into training examples. No re-splitting here;
-the task-level split was done before any data was generated, so there is no leakage.
-"""
-from __future__ import annotations
-import json
+"""Create disjoint train/validation next-action examples; never use final-test data."""
+import json, random, hashlib
 from pathlib import Path
+from .engine import SYSTEM
+from .scorer import final_numeric
+from .tasks_io import load_test, load_train
+from .student_agent import _history_to_text
 
-ROOT = Path(__file__).resolve().parents[2]
-TEACHER_DATA = ROOT / "teacher_data.jsonl"
-TRAIN_DATA = ROOT / "train_conversations.jsonl"
+ROOT = Path.cwd()
 
-SYSTEM = ("You are a calculator agent. Use the add and multiply tools to compute step by step, "
-          "then give the final number.")
+def to_examples(ex):
+    answer = final_numeric(ex.get("final_answer", ""))
+    if answer is None or abs(answer - ex["answer"]) >= 1e-6:
+        return []
+    history, rows = [], []
+    for step in ex["steps"]:
+        if str(step["result"]).startswith("error:"):
+            return []
+        args = step["args"]
+        call = f"{step['tool']}(a={args['a']}, b={args['b']})"
+        messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": ex["question"]}]
+        messages.extend(_history_to_text(history))
+        rows.append({"task_id": ex["task_id"], "messages": messages + [{"role": "assistant", "content": call}]})
+        history.extend([("call", step["tool"], args), ("observation", step["result"])])
+    messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": ex["question"]}]
+    messages.extend(_history_to_text(history))
+    rows.append({"task_id": ex["task_id"], "messages": messages + [{"role": "assistant", "content": f"Answer: {answer}"}]})
+    return rows
 
-
-def format_tool_calls(steps) -> str:
-    lines = []
-    for s in steps:
-        args = ", ".join(f"{k}={v}" for k, v in s["args"].items())
-        lines.append(f"{s['tool']}({args}) = {s['result']}")
-    return "\n".join(lines)
-
-
-def to_conversation(ex) -> dict:
-    target = format_tool_calls(ex["steps"])
-    answer = ex.get("final_answer") or f"The answer is {ex['answer']}."
-    return {
-        "task_id": ex["task_id"],
-        "messages": [
-            {"role": "system", "content": SYSTEM},
-            {"role": "user", "content": ex["question"]},
-            {"role": "assistant", "content": f"{target}\n\nAnswer: {answer}"},
-        ],
-    }
-
-
-def main() -> None:
-    examples = []
-    with open(TEACHER_DATA) as f:
-        for line in f:
-            examples.append(to_conversation(json.loads(line)))
-
-    with open(TRAIN_DATA, "w") as f:
-        for ex in examples:
-            f.write(json.dumps(ex) + "\n")
-
-    print(f"Wrote {len(examples)} training conversations to {TRAIN_DATA.name}")
-    if examples:
-        print("\nExample:")
-        print(json.dumps(examples[0]["messages"], indent=2))
-
+def main():
+    examples = [json.loads(line) for line in (ROOT / "teacher_data.jsonl").read_text().splitlines()]
+    allowed = {t.question for t in load_train()}
+    forbidden = {t.question for t in load_test()}
+    if any(e["question"] not in allowed or e["question"] in forbidden for e in examples):
+        raise ValueError("teacher data must contain training questions only")
+    questions = sorted({e["question"] for e in examples})
+    if len(questions) < 2:
+        raise ValueError("at least two unique training questions required")
+    random.Random(42).shuffle(questions)
+    validation = set(questions[:max(1, round(.15 * len(questions)))])
+    groups = {"train": [], "validation": []}
+    for ex in examples:
+        groups["validation" if ex["question"] in validation else "train"].extend(to_examples(ex))
+    for name, rows in groups.items():
+        if not rows:
+            raise ValueError(f"no valid {name} examples; regenerate teacher data")
+        (ROOT / f"{name}_conversations.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+        print(name, len(rows), "next-action examples")
+    (ROOT / "training_split.json").write_text(json.dumps({"schema_version": "2.0", "train_sha256": hashlib.sha256((ROOT / "train_conversations.jsonl").read_bytes()).hexdigest(), "validation_sha256": hashlib.sha256((ROOT / "validation_conversations.jsonl").read_bytes()).hexdigest(), "seed": 42, "validation_questions": sorted(validation),
+                                                         "train_questions": sorted(set(questions)-validation)}, indent=2))
 
 if __name__ == "__main__":
     main()

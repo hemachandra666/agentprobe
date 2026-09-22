@@ -1,12 +1,8 @@
-"""Load the generated task splits (with true answers) from data/."""
-from __future__ import annotations
+"""Load task data from an explicit directory, working data, or packaged examples."""
 from dataclasses import dataclass
-import json
+from importlib.resources import files
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data"
-
+import json
 
 @dataclass
 class Task:
@@ -18,23 +14,17 @@ class Task:
     min_steps: int
     answer: float
 
+def data_root(directory=None):
+    if directory is not None:
+        return Path(directory)
+    local = Path.cwd() / "data"
+    return local if local.is_dir() else files("agentprobe").joinpath("data")
 
-def _load(path: Path) -> list[Task]:
-    tasks = []
-    with open(path) as f:
-        for line in f:
-            d = json.loads(line)
-            tasks.append(Task(
-                task_id=d["task_id"], family=d["family"], question=d["question"],
-                reference_tools=d["reference_tools"], numbers=d["numbers"],
-                min_steps=d["min_steps"], answer=d["answer"],
-            ))
-    return tasks
+def _load(name, directory=None):
+    return [Task(**json.loads(line)) for line in data_root(directory).joinpath(name).read_text().splitlines() if line.strip()]
 
+def load_train(directory=None):
+    return _load("train_tasks.jsonl", directory)
 
-def load_train() -> list[Task]:
-    return _load(DATA / "train_tasks.jsonl")
-
-
-def load_test() -> list[Task]:
-    return _load(DATA / "test_tasks.jsonl")
+def load_test(directory=None):
+    return _load("test_tasks.jsonl", directory)

@@ -21,11 +21,12 @@ class Task:
     answer: float
 
 
-def make_traj(task_id, tool_calls, final="done"):
+def make_traj(task_id, tool_calls, final="Answer: 14"):
     t = Trajectory(task_id=task_id)
     for tool, args, result in tool_calls:
         t.add_step(tool, args, result)
     t.final_answer = final
+    t.termination = "model_final"
     return t
 
 
@@ -48,7 +49,7 @@ def test_right_tools_wrong_answer_fails():
     Tool names match the reference exactly, so tool_sequence_match is 1.0,
     but the answer is 600 not 14, so the task must NOT be counted a success.
     """
-    traj = make_traj("t", [("add", {"a": 100, "b": 200}, "300"), ("multiply", {"a": 300, "b": 2}, "600")])
+    traj = make_traj("t", [("add", {"a": 100, "b": 200}, "300"), ("multiply", {"a": 300, "b": 2}, "600")], final="Answer: 600")
     assert scorer.tool_sequence_match(traj, TASK) == 1.0      # shape matches
     assert scorer.answer_correct(traj, TASK) is False         # but answer is wrong
     assert scorer.task_success(traj, TASK) is False           # so it fails

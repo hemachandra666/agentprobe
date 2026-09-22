@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 from . import engine
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path.cwd()
 ADAPTER_DIR = str(ROOT / "student_lora")
 BASE_MODEL = "unsloth/Qwen2.5-1.5B-Instruct"
 
@@ -74,38 +74,31 @@ def _generate(model, tok, question: str, history: list) -> str:
     out = model.generate(
         input_ids=inputs,
         attention_mask=(inputs != tok.pad_token_id).long(),
-        max_new_tokens=120, temperature=0.1, pad_token_id=tok.eos_token_id,
+        max_new_tokens=120, do_sample=False, pad_token_id=tok.eos_token_id,
     )
     decoded = tok.decode(out[0][inputs.shape[1]:], skip_special_tokens=True)
     return decoded or ""
 
 
-class _TextStudent(engine.Provider):
-    """Shared logic: generate text, parse ONE new tool call, or a final answer."""
-    def __init__(self):
-        self._executed: set[str] = set()
+def parse_action(text):
+    """Parse a complete single action; never scan past malformed output."""
+    from .scorer import NUMBER
+    answer = re.fullmatch(rf"Answer:\s*({NUMBER})", text.strip(), re.I)
+    if answer:
+        return engine.Action(None, None, answer.group(1), text)
+    call = re.fullmatch(rf"([A-Za-z_]\w*)\(\s*([ab])\s*=\s*({NUMBER})\s*,\s*([ab])\s*=\s*({NUMBER})\s*\)", text.strip())
+    if call and call.group(2) != call.group(4):
+        args = {call.group(2): float(call.group(3)), call.group(4): float(call.group(5))}
+        return engine.Action(call.group(1), args, None, text)
+    return engine.Action(None, None, None, text, error="expected one tool call or Answer: NUMBER")
 
+class _TextStudent(engine.Provider):
     def _model(self):
         raise NotImplementedError
 
-    def act(self, question: str, history: list) -> engine.Action:
+    def act(self, question, history):
         model, tok = self._model()
-        text = _generate(model, tok, question, history)
-
-        for m in CALL_RE.finditer(text):
-            sig = m.group(0)
-            if sig in self._executed:
-                continue
-            self._executed.add(sig)
-            k1, v1, k2, v2 = m.group(2), m.group(3), m.group(4), m.group(5)
-            args = {k1: float(v1), k2: float(v2)}
-            return engine.Action(tool=m.group(1), args=args, final_answer=None, raw=text)
-
-        am = ANSWER_RE.search(text)
-        if am:
-            return engine.Action(tool=None, args=None, final_answer=am.group(1).strip(), raw=text)
-
-        return engine.Action(tool=None, args=None, final_answer=text.strip()[:80], raw=text)
+        return parse_action(_generate(model, tok, question, history))
 
 
 class StudentProvider(_TextStudent):
