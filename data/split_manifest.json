@@ -1,0 +1,67 @@
+{
+  "seed": 42,
+  "instances_per_family": 200,
+  "families": {
+    "f_mul": [
+      "multiply"
+    ],
+    "f_add": [
+      "add"
+    ],
+    "f_add_mul": [
+      "add",
+      "multiply"
+    ],
+    "f_mul_add": [
+      "multiply",
+      "add"
+    ],
+    "f_add_add": [
+      "add",
+      "add"
+    ],
+    "f_mul_mul": [
+      "multiply",
+      "multiply"
+    ],
+    "f_add_mul_add": [
+      "add",
+      "multiply",
+      "add"
+    ],
+    "f_mul_add_mul": [
+      "multiply",
+      "add",
+      "multiply"
+    ],
+    "f_add_mul_add_mul": [
+      "add",
+      "multiply",
+      "add",
+      "multiply"
+    ],
+    "f_len5_a": [
+      "add",
+      "multiply",
+      "add",
+      "multiply",
+      "add"
+    ],
+    "f_len5_b": [
+      "multiply",
+      "add",
+      "multiply",
+      "add",
+      "multiply"
+    ]
+  },
+  "family_holdout": [
+    "f_len5_b",
+    "f_mul_add_mul"
+  ],
+  "counts": {
+    "total": 2200,
+    "train": 1441,
+    "test": 759
+  }
+}
