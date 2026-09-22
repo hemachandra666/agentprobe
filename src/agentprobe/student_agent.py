@@ -46,12 +46,27 @@ def _load_base():
     return _base
 
 
+def _history_to_text(history: list) -> list:
+    """Turn engine history (call/observation/assistant tuples) into chat messages
+    the student can read: past tool calls and their results, in text form."""
+    messages = []
+    for entry in history:
+        kind = entry[0]
+        if kind == "call":
+            _, tool, args = entry
+            arg_str = ", ".join(f"{k}={v}" for k, v in args.items())
+            messages.append({"role": "assistant", "content": f"{tool}({arg_str})"})
+        elif kind == "observation":
+            messages.append({"role": "user", "content": f"result: {entry[1]}"})
+        elif kind == "assistant":
+            messages.append({"role": "assistant", "content": str(entry[1])})
+    return messages
+
+
 def _generate(model, tok, question: str, history: list) -> str:
     messages = [{"role": "system", "content": engine.SYSTEM},
                 {"role": "user", "content": question}]
-    for role, content in history:
-        messages.append({"role": role if role == "assistant" else "user",
-                         "content": str(content)})
+    messages.extend(_history_to_text(history))
     inputs = tok.apply_chat_template(
         messages, tokenize=True, add_generation_prompt=True, return_tensors="pt"
     ).to("cuda")
