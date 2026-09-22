@@ -4,23 +4,23 @@ Runs teacher, UNTUNED student, and TUNED student on data/test_tasks.jsonl
 (tasks never trained on, including two held-out families). Every model uses the
 same engine loop and the same honest scorer. task_success = correct final answer.
 
-P1-1: report BOTH macro-average error (mean of per-run error fractions) and
-micro-average error (total failed calls / total calls), with explicit
-denominators, since they differ when runs have different lengths. Recovery is
-reported as N/A when no run actually errored.
+P1-1: report BOTH macro-average and micro-average error, with denominators.
+P1-3: save one COMPLETE run record per attempted run (including failed/zero-call
+runs) to traces/comparison_runs.jsonl, alongside the aggregate summary.
 """
 from __future__ import annotations
-import argparse, json, random
+import argparse, json, random, uuid
 from pathlib import Path
 from . import agent, student_agent, scorer, engine
 from .tasks_io import load_test
 
 ROOT = Path(__file__).resolve().parents[2]
 RESULT_PATH = ROOT / "comparison.json"
+TRACES_PATH = ROOT / "traces" / "comparison_runs.jsonl"
 TEACHER = "qwen2.5:7b"
 
 
-def eval_provider(provider_factory, label, tasks, runs):
+def eval_provider(provider_factory, label, tasks, runs, experiment_id, trace_file):
     rows = []
     total_calls = 0
     total_failed_calls = 0
@@ -33,7 +33,11 @@ def eval_provider(provider_factory, label, tasks, runs):
             s = scorer.score_one(traj, task)
             s["family"] = task.family
             rows.append(s)
-            # micro-average accounting: count actual calls and failures
+
+            # P1-3: write a complete record for THIS run (even if it failed)
+            record = engine.run_record(traj, task, label, experiment_id, s)
+            trace_file.write(json.dumps(record) + "\n")
+
             calls = traj.step_count
             failed = scorer.error_count(traj)
             total_calls += calls
@@ -46,8 +50,6 @@ def eval_provider(provider_factory, label, tasks, runs):
     n = len(rows)
     succ = sum(1 for r in rows if r["task_success"])
     effs = [r["step_efficiency"] for r in rows if r["step_efficiency"] is not None]
-
-    # recovery is only defined over runs that actually errored
     recovery = round(recovered_runs / errored_runs, 3) if errored_runs > 0 else None
 
     return {
@@ -55,10 +57,8 @@ def eval_provider(provider_factory, label, tasks, runs):
         "task_success_rate": round(succ / n, 3),
         "answer_correct_rate": round(sum(1 for r in rows if r["answer_correct"]) / n, 3),
         "avg_step_efficiency": round(sum(effs) / len(effs), 3) if effs else None,
-        # macro: mean of per-run error fractions, denominator = number of runs
         "error_rate_macro": round(sum(r["error_rate"] for r in rows) / n, 3),
         "error_rate_macro_denominator_runs": n,
-        # micro: total failed calls / total calls, denominator = number of calls
         "error_rate_micro": round(total_failed_calls / total_calls, 3) if total_calls else 0.0,
         "error_rate_micro_denominator_calls": total_calls,
         "loop_any_rate": round(sum(1 for r in rows if r["loops"] > 0) / n, 3),
@@ -82,25 +82,36 @@ def parse_args():
 
 def main() -> None:
     args = parse_args()
+    experiment_id = uuid.uuid4().hex[:12]
 
     tasks = load_test()
     random.Random(42).shuffle(tasks)
     tasks = tasks[:args.max_tasks]
 
-    print(f"Evaluating on {len(tasks)} UNSEEN test tasks, {args.runs} run(s) each.\n")
+    TRACES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    print(f"Experiment {experiment_id}: {len(tasks)} UNSEEN test tasks, {args.runs} run(s) each.\n")
 
-    print(f"1/3 teacher ({TEACHER}) ...")
-    teacher = eval_provider(lambda: agent.OllamaProvider(TEACHER), f"teacher ({TEACHER})", tasks, args.runs)
+    with open(TRACES_PATH, "w") as tf:
+        print(f"1/3 teacher ({TEACHER}) ...")
+        teacher = eval_provider(lambda: agent.OllamaProvider(TEACHER),
+                                f"teacher ({TEACHER})", tasks, args.runs, experiment_id, tf)
 
-    print("2/3 untuned student (base 1.5B, no fine-tuning) ...")
-    untuned = eval_provider(lambda: student_agent.BaseStudentProvider(), "untuned student (1.5B base)", tasks, args.runs)
+        print("2/3 untuned student (base 1.5B, no fine-tuning) ...")
+        untuned = eval_provider(lambda: student_agent.BaseStudentProvider(),
+                                "untuned student (1.5B base)", tasks, args.runs, experiment_id, tf)
 
-    print("3/3 tuned student (distilled) ...")
-    tuned = eval_provider(lambda: student_agent.StudentProvider(), "tuned student (1.5B distilled)", tasks, args.runs)
+        print("3/3 tuned student (distilled) ...")
+        tuned = eval_provider(lambda: student_agent.StudentProvider(),
+                              "tuned student (1.5B distilled)", tasks, args.runs, experiment_id, tf)
 
     rows = [teacher, untuned, tuned]
-    RESULT_PATH.write_text(json.dumps({"models": rows, "runs_per_task": args.runs,
-                                       "num_test_tasks": len(tasks)}, indent=2))
+    RESULT_PATH.write_text(json.dumps({
+        "experiment_id": experiment_id,
+        "models": rows,
+        "runs_per_task": args.runs,
+        "num_test_tasks": len(tasks),
+        "traces_file": TRACES_PATH.name,
+    }, indent=2))
 
     print(f"\n{'model':32} {'success':>8} {'ans_ok':>8} {'eff':>6} "
           f"{'err_macro':>10} {'err_micro':>10} {'recov':>7}")
@@ -111,10 +122,9 @@ def main() -> None:
         print(f"{r['label']:32} {r['task_success_rate']:>8} {r['answer_correct_rate']:>8} "
               f"{str(eff):>6} {r['error_rate_macro']:>10} {r['error_rate_micro']:>10} {str(recov):>7}")
 
-    print(f"\nerr_macro = mean of per-run error fractions (denominator = runs).")
-    print(f"err_micro = failed calls / total calls (denominator = calls). They differ")
-    print(f"when runs have different lengths. recov = recovered / errored runs, N/A if none errored.")
-    print(f"Saved to {RESULT_PATH.name}")
+    total_records = sum(r["total_runs"] for r in rows)
+    print(f"\nSaved aggregate to {RESULT_PATH.name}")
+    print(f"Saved {total_records} complete run records to {TRACES_PATH.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

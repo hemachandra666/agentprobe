@@ -1,18 +1,19 @@
 {
+  "experiment_id": "0b21926f221d",
   "models": [
     {
       "label": "teacher (qwen2.5:7b)",
-      "task_success_rate": 0.2,
-      "answer_correct_rate": 0.2,
-      "avg_step_efficiency": 0.967,
+      "task_success_rate": 1.0,
+      "answer_correct_rate": 1.0,
+      "avg_step_efficiency": 1.0,
       "error_rate_macro": 0.0,
-      "error_rate_macro_denominator_runs": 50,
+      "error_rate_macro_denominator_runs": 10,
       "error_rate_micro": 0.0,
-      "error_rate_micro_denominator_calls": 70,
-      "loop_any_rate": 0.06,
+      "error_rate_micro_denominator_calls": 37,
+      "loop_any_rate": 0.0,
       "recovery_rate": null,
       "errored_runs": 0,
-      "total_runs": 50
+      "total_runs": 10
     },
     {
       "label": "untuned student (1.5B base)",
@@ -20,29 +21,30 @@
       "answer_correct_rate": 0.0,
       "avg_step_efficiency": null,
       "error_rate_macro": 0.0,
-      "error_rate_macro_denominator_runs": 50,
+      "error_rate_macro_denominator_runs": 10,
       "error_rate_micro": 0.0,
       "error_rate_micro_denominator_calls": 0,
       "loop_any_rate": 0.0,
       "recovery_rate": null,
       "errored_runs": 0,
-      "total_runs": 50
+      "total_runs": 10
     },
     {
       "label": "tuned student (1.5B distilled)",
-      "task_success_rate": 0.04,
-      "answer_correct_rate": 0.04,
-      "avg_step_efficiency": 0.5,
+      "task_success_rate": 0.5,
+      "answer_correct_rate": 0.5,
+      "avg_step_efficiency": 1.0,
       "error_rate_macro": 0.0,
-      "error_rate_macro_denominator_runs": 50,
+      "error_rate_macro_denominator_runs": 10,
       "error_rate_micro": 0.0,
-      "error_rate_micro_denominator_calls": 215,
-      "loop_any_rate": 0.0,
+      "error_rate_micro_denominator_calls": 37,
+      "loop_any_rate": 0.2,
       "recovery_rate": null,
       "errored_runs": 0,
-      "total_runs": 50
+      "total_runs": 10
     }
   ],
   "runs_per_task": 1,
-  "num_test_tasks": 50
+  "num_test_tasks": 10,
+  "traces_file": "comparison_runs.jsonl"
 }
