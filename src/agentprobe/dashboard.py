@@ -14,10 +14,11 @@ RESULTS_PATH = ROOT / "results.json"
 EXAMPLE_PATH = ROOT / "examples" / "broken_path.json"
 COMPARISON_PATH = ROOT / "comparison.json"
 
-st.set_page_config(page_title="Kept", page_icon="🧭", layout="wide")
+st.set_page_config(page_title="AgentProbe", page_icon="🧭", layout="wide")
 
 # ---- headline: the finding, before any numbers ----
-st.title("Kept")
+st.title("AgentProbe")
+st.caption("An open-source tool that verifies whether a distilled AI agent kept its original behavior, not just its answers.")
 st.subheader("Did the distilled model keep the teacher's agent behavior, not just its answers?")
 st.write(
     "Distilling a model to make it smaller and cheaper is easy. Proving the small model still "
