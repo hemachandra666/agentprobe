@@ -23,7 +23,7 @@ st.subheader("Did the distilled model keep the teacher's agent behavior, not jus
 st.write(
     "Distilling a model to make it smaller and cheaper is easy. Proving the small model still "
     "behaves like the teacher, picking the right tools, avoiding loops, recovering from errors, "
-    "is the hard part. Kept measures exactly that, on the path, not just the final answer."
+    "is the hard part. AgentProbe measures exactly that, on the path, not just the final answer."
 )
 
 st.divider()
@@ -51,7 +51,7 @@ if COMPARISON_PATH.exists():
     st.info(
         "Read this as preservation, not superiority. A 1.5B model does not truly beat a 7B one; "
         "the scores match within noise. The student scores well because it only has to choose the "
-        "right tools, the real tools do the arithmetic it would otherwise get wrong. Kept measures "
+        "right tools, the real tools do the arithmetic it would otherwise get wrong. AgentProbe measures "
         "tool-selection behavior, which is exactly what distillation transferred."
     )
 
@@ -98,7 +98,7 @@ if not RESULTS_PATH.exists():
 data = json.loads(RESULTS_PATH.read_text())
 df = pd.DataFrame(data["models"]).set_index("model").sort_values("avg_traj", ascending=False)
 
-st.header("Kept also benchmarks open-weight models")
+st.header("AgentProbe also benchmarks open-weight models")
 st.caption(f"{len(df)} open-weight models, {data['num_tasks']} tasks, {data['runs_per_task']} runs each. Generated {data['generated_at']}.")
 
 best = df.index[0]
