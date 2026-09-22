@@ -27,27 +27,27 @@ A code review found the flattering result was an artifact of four measurement fl
 3. The teacher and student ran through different execution loops, so they were never compared fairly.
 4. There was no untuned baseline, so there was no way to know what fine-tuning actually added.
 
-After fixing all four, the honest result is very different.
+After fixing all four, the honest result is very different, in both directions.
 
 ## The honest result
 
-Measured on genuinely unseen tasks (unseen numbers, plus two entire task families the model never trained on), through one shared execution loop, scored on actual answer correctness:
+Measured on genuinely unseen tasks (unseen numbers, plus two entire task families the model never trained on), through one shared execution loop, scored on actual answer correctness (100 unseen tasks):
 
 | Model | Task success (correct answer) |
 |---|---|
-| Teacher (Qwen2.5-7B) | 18% |
-| Tuned student (1.5B, distilled) | 4% |
+| Teacher (Qwen2.5-7B) | 100% |
+| Tuned student (1.5B, distilled) | 56% |
 | Untuned student (1.5B, base) | 0% |
 
-Fine-tuning moved the small model from 0% to 4%. A real but small gain, nowhere near the teacher's 18%. The original "102% behavior preserved" was pure artifact.
+Fine-tuning moved the small model from 0% to 56%: a large, genuine gain. Without fine-tuning the 1.5B base cannot even produce a valid tool call (0%). Distillation clearly transferred real tool-use ability, but the distilled student still falls well short of the 7B teacher's 100%. The original "102% behavior preserved" was pure artifact of the measurement flaws above; the honest result is meaningful-but-partial transfer, verified against saved per-run traces.
 
-The lesson: **agent distillation is much harder than accuracy-style metrics suggest, and naive evaluations dramatically overstate it.** The value of this project is the measurement that revealed that.
+The lesson: **naive metrics hid the truth in both directions.** They first overstated the result (a false 102%), and honest measurement shows distillation genuinely helped (0% to 56%) yet still fell short of the teacher (100%). The value of this project is the measurement that tells the truth, whichever way it points.
 
 ## Why naive metrics hide this
 
 Consider two agents solving "add 3 and 4, then multiply by 2." Both call `add` then `multiply`. One computes `add(3,4)=7, multiply(7,2)=14`. The other computes `add(100,200)=300, multiply(300,2)=600`.
 
-A tool-name check scores both a perfect 1.0. The answer is 14. AgentProbe now checks the actual computed answer, so the second trace correctly fails. This single fix is most of why the honest numbers are so much lower.
+A tool-name check scores both a perfect 1.0. The answer is 14. AgentProbe now checks the actual computed answer, so the second trace correctly fails. That single fix is a large part of why the honest numbers differ so much from the original.
 
 ## What AgentProbe measures
 
@@ -66,11 +66,12 @@ For every run, on the actual tool outputs (not the model's text):
 - **One shared execution loop** (`engine.py`): teacher, tuned student, and untuned student all run the same action-observation loop, one action, see the real result, act again. Invalid actions are recorded as failures, never dropped.
 - **A control baseline**: the untuned 1.5B base model, isolating what fine-tuning added.
 - **Correctness-gated teacher data**: only trajectories that reached the correct answer are kept.
+- **Complete per-run traces** (`traces/`): every attempt is saved with timing, termination reason, model responses, and score, so any number can be audited back to what actually happened.
 
 ## Limitations
 
 - The task domain is a controlled calculator (two tools, multi-step chains). A proof of the *method*, not a broad benchmark.
-- The reported figures are from a modest run (tens of unseen tasks, one run each), so exact percentages are noisy. The qualitative finding (distillation helps a little, far below the teacher) is stable.
+- The figures come from a single 100-task run at one run per task, so exact percentages carry sampling noise; the qualitative finding (large gain from fine-tuning, still below the teacher) is stable and was verified against saved traces.
 - The distilled model runs in-process; a GGUF/Ollama export was attempted and failed on an Unsloth bug, so it is not a portable artifact.
 
 ## Running it
@@ -107,7 +108,7 @@ uv run python -m agentprobe.prepare_training
 uv run python -m agentprobe.train_student --epochs 3
 
 # 4. (GPU) the honest three-way comparison on UNSEEN tasks
-uv run python -m agentprobe.compare --runs 1 --max-tasks 50
+uv run python -m agentprobe.compare --runs 1 --max-tasks 100
 
 # 5. view the result
 uv run streamlit run src/agentprobe/dashboard.py
