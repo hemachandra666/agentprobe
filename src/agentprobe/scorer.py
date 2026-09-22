@@ -5,8 +5,12 @@ score add(100,200) then multiply(300,2) as a perfect 1.0 for "add 3 and 4, then
 multiply by 2", even though the answer is 600 not 14. That metric is retained
 but renamed tool_sequence_match, so it is never mistaken for correctness.
 New metrics actually validate the task: final-answer correctness and task success.
+
+P0-4 fix: loop detection now catches non-adjacent A-B-A-B cycles, and does not
+count a legitimate retry (a repeat right after an error) as a loop.
 """
 from __future__ import annotations
+from collections import Counter
 from .trajectory import Trajectory
 
 # A "task" here is anything with .reference_tools, .min_steps, and .answer.
@@ -90,17 +94,44 @@ def step_efficiency(traj: Trajectory, task) -> float:
     return round(min(1.0, task.min_steps / traj.step_count), 3)
 
 
+def _is_retry(prev_result: str) -> bool:
+    """A repeat right after an error is a legitimate retry, not a loop."""
+    return str(prev_result).startswith("error:")
+
+
 def loop_count(traj: Trajectory) -> int:
-    """Consecutive identical calls (same tool AND same args)."""
+    """Consecutive identical calls (same tool AND same args) that are NOT retries.
+
+    A repeat immediately following an error is a legitimate retry and is not
+    counted. Everything else that repeats an identical call in a row is a loop.
+    """
     loops = 0
     for prev, cur in zip(traj.steps, traj.steps[1:]):
         if prev.tool == cur.tool and prev.args == cur.args:
-            loops += 1
+            if not _is_retry(prev.result):
+                loops += 1
     return loops
 
 
+def cycle_detected(traj: Trajectory) -> bool:
+    """True if the agent returns to a state it already left, e.g. A-B-A-B.
+
+    A signature that appears again at a LATER, non-adjacent position means the
+    agent went somewhere else and came back, which is an unproductive cycle.
+    (An immediately-adjacent repeat is handled by loop_count / retry logic.)
+    """
+    sigs = [(s.tool, tuple(sorted((s.args or {}).items()))) for s in traj.steps]
+    seen: dict = {}
+    for i, sig in enumerate(sigs):
+        if sig in seen and i - seen[sig] >= 2:
+            # same call reappears after at least one other step in between
+            return True
+        seen[sig] = i
+    return False
+
+
 def has_loop(traj: Trajectory) -> bool:
-    return loop_count(traj) > 0
+    return loop_count(traj) > 0 or cycle_detected(traj)
 
 
 def error_count(traj: Trajectory) -> int:
@@ -132,6 +163,7 @@ def score_one(traj: Trajectory, task) -> dict:
         "tool_sequence_match": tool_sequence_match(traj, task),
         "step_efficiency": step_efficiency(traj, task),
         "loops": loop_count(traj),
+        "cycle": cycle_detected(traj),
         "error_rate": error_rate(traj),
         "recovered": recovered(traj, task),
         "steps": traj.step_count,

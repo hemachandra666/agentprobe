@@ -94,3 +94,33 @@ def test_clean_run_recovery_is_not_applicable():
     """No error occurred, so recovery is N/A, not 1.0 (P0-4)."""
     traj = make_traj("t", [("add", {"a": 3, "b": 4}, "7"), ("multiply", {"a": 7, "b": 2}, "14")])
     assert scorer.recovered(traj, TASK) is None
+
+def test_abab_cycle_is_detected():
+    """Non-adjacent oscillation: add, multiply, add, multiply on the same calls."""
+    traj = make_traj("t", [
+        ("add", {"a": 3, "b": 4}, "7"),
+        ("multiply", {"a": 7, "b": 2}, "14"),
+        ("add", {"a": 3, "b": 4}, "7"),
+        ("multiply", {"a": 7, "b": 2}, "14"),
+    ])
+    assert scorer.cycle_detected(traj) is True
+    assert scorer.has_loop(traj) is True
+
+
+def test_retry_after_error_is_not_a_loop():
+    """Repeating a call right after it errored is a legitimate retry, not a loop."""
+    traj = make_traj("t", [
+        ("multiply", {"a": 7, "b": 2}, "error: bad argument"),
+        ("multiply", {"a": 7, "b": 2}, "14"),
+    ])
+    assert scorer.loop_count(traj) == 0
+
+
+def test_clean_two_step_has_no_loop():
+    """A normal correct two-step run has no loop and no cycle."""
+    traj = make_traj("t", [
+        ("add", {"a": 3, "b": 4}, "7"),
+        ("multiply", {"a": 7, "b": 2}, "14"),
+    ])
+    assert scorer.has_loop(traj) is False
+    assert scorer.cycle_detected(traj) is False
