@@ -1,15 +1,27 @@
 [project]
 name = "agentprobe"
 version = "0.1.0"
-description = "Trajectory-level evaluation and distillation verification for open-weight agents"
+description = "Honest evaluation infrastructure for AI agents: trajectory-level scoring and distillation verification for open-weight agents"
 readme = "README.md"
 requires-python = ">=3.11"
+# Core dependencies: everything needed to run the eval, scorer, benchmark,
+# and dashboard on CPU. No GPU or fine-tuning libraries here.
 dependencies = [
     "ollama>=0.6.2",
     "pandas>=3.0.5",
     "pyyaml>=6.0.3",
     "streamlit>=1.62.0",
+]
+
+[project.optional-dependencies]
+# GPU extra: only needed for distillation and running the student model.
+# Install with: pip install agentprobe[gpu]
+# Note: on some GPUs (e.g. NVIDIA Blackwell) you may need a specific torch
+# build from https://pytorch.org/get-started/locally/ ; see the README.
+gpu = [
     "unsloth>=2026.9.6",
+    "trl>=0.12.0",
+    "datasets>=3.0.0",
 ]
 
 [build-system]

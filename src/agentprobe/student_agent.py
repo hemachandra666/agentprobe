@@ -11,7 +11,6 @@ tool, and feeds the observation back before the next action.
 from __future__ import annotations
 import re
 from pathlib import Path
-from unsloth import FastLanguageModel
 from . import engine
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -29,6 +28,7 @@ _base = None       # (model, tokenizer) plain base, no adapter
 def _load_tuned():
     global _tuned
     if _tuned is None:
+        from unsloth import FastLanguageModel
         m, t = FastLanguageModel.from_pretrained(
             model_name=ADAPTER_DIR, max_seq_length=2048, load_in_4bit=True)
         FastLanguageModel.for_inference(m)
@@ -39,6 +39,7 @@ def _load_tuned():
 def _load_base():
     global _base
     if _base is None:
+        from unsloth import FastLanguageModel
         m, t = FastLanguageModel.from_pretrained(
             model_name=BASE_MODEL, max_seq_length=2048, load_in_4bit=True)
         FastLanguageModel.for_inference(m)

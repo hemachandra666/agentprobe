@@ -33,7 +33,9 @@ class Trajectory:
         d = asdict(self)
         d["step_count"] = self.step_count
         return d
-
+    
     def save(self, path: str) -> None:
+        from pathlib import Path
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             json.dump(self.to_dict(), f, indent=2)

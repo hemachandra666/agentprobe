@@ -1,4 +1,7 @@
-"""Writes agent steps as OpenTelemetry-style spans to a JSONL stream.
+"""Writes agent steps as span-shaped JSON records to a JSONL stream.
+
+Note: these are span-SHAPED records (trace_id, span_id, name, attributes), not a
+real OpenTelemetry integration. They are readable and auditable, nothing more.
 
 One span per step, one JSON object per line. This is the structured,
 tool-readable trace format the dashboard will consume in Week 3.

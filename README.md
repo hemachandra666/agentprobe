@@ -75,16 +75,49 @@ For every run, on the actual tool outputs (not the model's text):
 
 ## Running it
 
-Requires Python 3.11+ and [Ollama](https://ollama.com). Distillation and student evaluation require an NVIDIA GPU.
+Requires Python 3.11+ and [Ollama](https://ollama.com). The eval, scorer,
+benchmark, and dashboard run on CPU. Distillation and running the student model
+require an NVIDIA GPU (install the `[gpu]` extra).
 
-    git clone https://github.com/hemachandra666/agentprobe.git
-    cd agentprobe
-    uv sync
-    ollama pull qwen2.5:7b
+```bash
+git clone https://github.com/hemachandra666/agentprobe.git
+cd agentprobe
 
-    uv run python -m agentprobe.task_gen
-    uv run python -m agentprobe.check_leakage
-    uv run python -m agentprobe.compare --runs 1 --max-tasks 50
+# core install (CPU: eval, scorer, dashboard)
+uv sync
+# for distillation and the student model (GPU):
+#   uv pip install -e ".[gpu]"
+#   on new GPUs you may need a specific torch build; see https://pytorch.org
+
+ollama pull qwen2.5:7b
+```
+
+Full honest pipeline, in order:
+
+```bash
+# 1. generate unique tasks and the leak-free train/test split
+uv run python -m agentprobe.task_gen
+uv run python -m agentprobe.check_leakage      # asserts zero overlap, zero dupes
+
+# 2. (GPU) generate correctness-gated teacher trajectories
+uv run python -m agentprobe.generate_teacher --runs 3
+
+# 3. (GPU) format training data and distil the student
+uv run python -m agentprobe.prepare_training
+uv run python -m agentprobe.train_student --epochs 3
+
+# 4. (GPU) the honest three-way comparison on UNSEEN tasks
+uv run python -m agentprobe.compare --runs 1 --max-tasks 50
+
+# 5. view the result
+uv run streamlit run src/agentprobe/dashboard.py
+```
+
+The scorer unit tests run on CPU with no model or GPU:
+
+```bash
+uv run python -m pytest tests/ -v
+```
 
 ## Repository contents
 

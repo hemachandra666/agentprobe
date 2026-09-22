@@ -9,12 +9,13 @@ wheels/
 # Virtual environments
 .venv
 
-# Generated eval output
-traces/
-
-# Trained model artifacts
+# Trained model artifacts (never commit; large)
 student_lora/
-
-# Model artifacts, never commit
 student_gguf/
-student_lora/
+
+# Unsloth compilation cache
+unsloth_compiled_cache/
+
+# Large intermediate data (regenerate via the pipeline)
+teacher_data.jsonl
+train_conversations.jsonl
