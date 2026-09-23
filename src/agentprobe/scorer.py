@@ -1,20 +1,12 @@
-"""AgentProbe scorers.
+"""Separate computed results, final answers, completion, and path diagnostics.
 
-P0-2 fix: the old trajectory_match only checked tool NAMES in order. It could
-score add(100,200) then multiply(300,2) as a perfect 1.0 for "add 3 and 4, then
-multiply by 2", even though the answer is 600 not 14. That metric is retained
-but renamed tool_sequence_match, so it is never mistaken for correctness.
-New metrics actually validate the task: final-answer correctness and task success.
-
-P0-4 fix: loop detection now catches non-adjacent A-B-A-B cycles, and does not
-count a legitimate retry (a repeat right after an error) as a loop.
-
-P1-5 fix: one central is_error check instead of scattered startswith calls, and
-non-finite values (inf, nan) never count as a correct answer.
+Task success requires a completed answer supported by the final tool result.
+Legacy string-prefix errors are supported only when no structured status exists.
 """
 from __future__ import annotations
 import math
-from collections import Counter
+import json
+import re
 from .trajectory import Trajectory
 
 # A "task" here is anything with .reference_tools, .min_steps, and .answer.
@@ -22,12 +14,8 @@ from .trajectory import Trajectory
 
 
 def is_error(step) -> bool:
-    """The single source of truth for 'did this step error'.
-
-    Centralized so the error signal is not a fragile startswith scattered
-    across the file. A step errored if its result is our typed error string.
-    """
-    return str(step.result).startswith("error:")
+    """Read structured status; retain compatibility with imported legacy steps."""
+    return getattr(step, "status", "error" if str(step.result).startswith("error:") else "ok") == "error"
 
 
 def _true_answer(task):
@@ -63,7 +51,7 @@ def _final_numeric(traj: Trajectory):
     return None
 
 
-def answer_correct(traj: Trajectory, task) -> bool:
+def tool_result_correct(traj: Trajectory, task) -> bool:
     """Did the agent's actual computed result equal the task's true answer?
 
     Uses the last real tool result (what the tools computed, not the model's
@@ -78,22 +66,37 @@ def answer_correct(traj: Trajectory, task) -> bool:
     return abs(got - true) < 1e-6
 
 
-def task_success(traj: Trajectory, task) -> bool:
-    """A task succeeds if it produced the correct final answer.
+NUMBER = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
 
-    A mid-run error is allowed IF the agent recovered and still reached the
-    right answer (that recovered case is reported separately). What is never
-    allowed: a wrong final answer (the 600-vs-14 case) or an empty run, or a
-    run whose LAST step is still an error (it never recovered).
+def final_numeric(text):
+    """Accept a numeric answer, or one explicit terminal answer assertion.
+
+    No arbitrary last-number extraction: an expression/tool call is not an answer.
+    New providers produce numeric-only answers; prose support audits legacy traces.
     """
-    if traj.step_count == 0:
-        return False
-    if is_error(traj.steps[-1]):
-        return False  # ended on an error, did not recover
-    return answer_correct(traj, task)
+    text = str(text).strip()
+    match = re.fullmatch(rf"(?:Answer:\s*)?({NUMBER})", text, re.I)
+    if not match:
+        match = re.search(rf"\b(?:is|equals|answer:)\s*({NUMBER})[.!]?\s*$", text, re.I)
+    if not match:
+        return None
+    value = float(match.group(1))
+    return value if math.isfinite(value) else None
+
+def answer_correct(traj: Trajectory, task) -> bool:
+    true = _true_answer(task)
+    got = final_numeric(traj.final_answer)
+    return (true is not None and math.isfinite(true) and got is not None
+            and math.isclose(got, true, rel_tol=0, abs_tol=1e-6))
+
+def task_success(traj: Trajectory, task) -> bool:
+    """Calculator-agent policy: complete, correct answer backed by a real tool."""
+    return (getattr(traj, "termination", "unknown") == "model_final"
+            and bool(traj.steps) and not is_error(traj.steps[-1])
+            and tool_result_correct(traj, task) and answer_correct(traj, task))
 
 
-def step_efficiency(traj: Trajectory, task) -> float:
+def step_efficiency(traj: Trajectory, task) -> float | None:
     """Steps vs minimum, but only meaningful for SUCCESSFUL tasks.
 
     Returns None for unsuccessful tasks so partial runs cannot look efficient
@@ -120,7 +123,7 @@ def loop_count(traj: Trajectory) -> int:
     loops = 0
     for prev, cur in zip(traj.steps, traj.steps[1:]):
         if prev.tool == cur.tool and prev.args == cur.args:
-            if not _is_retry(prev.result):
+            if not is_error(prev):
                 loops += 1
     return loops
 
@@ -132,7 +135,7 @@ def cycle_detected(traj: Trajectory) -> bool:
     agent went somewhere else and came back, which is an unproductive cycle.
     (An immediately-adjacent repeat is handled by loop_count / retry logic.)
     """
-    sigs = [(s.tool, tuple(sorted((s.args or {}).items()))) for s in traj.steps]
+    sigs = [(s.tool, json.dumps(s.args, sort_keys=True, default=repr)) for s in traj.steps]
     seen: dict = {}
     for i, sig in enumerate(sigs):
         if sig in seen and i - seen[sig] >= 2:
@@ -172,6 +175,8 @@ def score_one(traj: Trajectory, task) -> dict:
         "task_id": task.task_id,
         "task_success": task_success(traj, task),
         "answer_correct": answer_correct(traj, task),
+        "tool_result_correct": tool_result_correct(traj, task),
+        "completed": getattr(traj, "termination", "unknown") == "model_final",
         "tool_sequence_match": tool_sequence_match(traj, task),
         "step_efficiency": step_efficiency(traj, task),
         "loops": loop_count(traj),

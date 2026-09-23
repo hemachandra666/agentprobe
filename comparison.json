@@ -46,5 +46,8 @@
   ],
   "runs_per_task": 1,
   "num_test_tasks": 100,
-  "traces_file": "comparison_runs.jsonl"
+  "traces_file": "comparison_runs.jsonl",
+  "status": "legacy_unvalidated",
+  "scorer_version": "1.0",
+  "warning": "Historical tool-result scores. Not validated final-answer success. Re-run with scorer 2.0."
 }

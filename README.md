@@ -1,139 +1,237 @@
-<p align="center">
-  <img src="docs/images/banner.png" alt="AgentProbe" width="100%">
-</p>
+<p align="center"><img src="docs/images/banner.png" alt="AgentProbe" width="100%"></p>
 
 # AgentProbe
 
-**Honest evaluation infrastructure for AI agents. It measures whether an agent actually behaves correctly, not just whether it looks like it did.**
+AgentProbe evaluates calculator-agent runs, recording tool actions, final answers,
+completion, errors, and repeated calls. It includes a teacher/student fine-tuning
+experiment and an untuned baseline. This is an experimental evaluation project.
 
-<p align="center">
-  <a href="https://agentprobe-ltkk9j7sybevnmkk8yhz2n.streamlit.app/"><img src="https://img.shields.io/badge/Live_Demo-Open_Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo"></a>
-  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+">
-  <img src="https://img.shields.io/badge/License-Apache_2.0-D22128?style=for-the-badge" alt="License: Apache 2.0">
-</p>
+## Result status
 
----
+**Scorer 2.0 evaluation completed on September 22, 2026, using 759 held-out
+tasks and one run per task for each model.**
 
-## What this project actually found
+| Model | Successful tasks | Task success |
+|---|---:|---:|
+| Qwen2.5 7B teacher | 735 / 759 | 96.84% |
+| Qwen2.5 1.5B untuned student | 111 / 759 | 14.62% |
+| Qwen2.5 1.5B QLoRA-tuned student | 716 / 759 | 94.33% |
 
-I built a tool to check whether a distilled 1.5B agent kept the behavior of its 7B teacher.
+Fine-tuning improved task success by **79.71 percentage points** over the untuned
+baseline. The tuned student finished **2.50 percentage points** behind the teacher.
 
-The first version said the distilled student preserved **102%** of the teacher's behavior. That number was wrong, and the interesting part of this project is *why* it was wrong and how the honest measurement was built.
+The tuned student completed every task with zero recorded parsing errors,
+tool execution errors, or detected loops. Completion does not imply correctness.
 
-A code review found the flattering result was an artifact of four measurement flaws:
+On the two task families excluded from training, `f_len5_b` and `f_mul_add_mul`,
+the tuned student succeeded on **367 / 400 tasks (91.75%)**.
 
-1. The "held-out" test set was made of the same questions the model trained on, so memorization looked like generalization.
-2. The scorer checked only tool *names* in order, not arguments or the final answer. A trace computing 600 for a task whose answer is 14 scored a perfect 1.0.
-3. The teacher and student ran through different execution loops, so they were never compared fairly.
-4. There was no untuned baseline, so there was no way to know what fine-tuning actually added.
+The remaining 43 failures comprised:
 
-After fixing all four, the honest result is very different, in both directions.
+- 32 runs with an incorrect final tool result.
+- 11 runs with a correct final tool result followed by an incorrect final answer.
 
-## The honest result
+These findings apply to this synthetic arithmetic benchmark and execution protocol.
 
-Measured on genuinely unseen tasks (unseen numbers, plus two entire task families the model never trained on), through one shared execution loop, scored on actual answer correctness (100 unseen tasks):
+**Evidence:**
+[Comparison summary](docs/results/2026-09-22/comparison.json) |
+[All 2,277 execution traces](docs/results/2026-09-22/comparison_runs.jsonl)
 
-| Model | Task success (correct answer) |
-|---|---|
-| Teacher (Qwen2.5-7B) | 100% |
-| Tuned student (1.5B, distilled) | 56% |
-| Untuned student (1.5B, base) | 0% |
+Experiment ID: `40af95f76f6841daba30d05622990717`.
 
-Fine-tuning moved the small model from 0% to 56%: a large, genuine gain. Without fine-tuning the 1.5B base cannot even produce a valid tool call (0%). Distillation clearly transferred real tool-use ability, but the distilled student still falls well short of the 7B teacher's 100%. The original "102% behavior preserved" was pure artifact of the measurement flaws above; the honest result is meaningful-but-partial transfer, verified against saved per-run traces.
+The root `comparison.json` and older traces remain historical evidence. Their
+100% / 0% / 56% scores checked tool results but could accept wrong final answers.
+Earlier results also suppressed repeated student calls and used a different
+training conversation format. Do not cite those figures as current task success.
 
-The lesson: **naive metrics hid the truth in both directions.** They first overstated the result (a false 102%), and honest measurement shows distillation genuinely helped (0% to 56%) yet still fell short of the teacher (100%). The value of this project is the measurement that tells the truth, whichever way it points.
+The current policy separates:
 
-## Why naive metrics hide this
+- `tool_result_correct`: the last successful tool result equals the reference.
+- `answer_correct`: the model's explicit final answer equals the reference.
+- `completed`: the run finished with a model final answer.
+- `task_success`: completed, correct final answer supported by the last tool result,
+  with no final failed step. A calculator task requires at least one tool call.
+- Efficiency on successful eligible tasks, tool errors, parser errors, loops/cycles,
+  and recovery when an error actually occurred.
 
-Consider two agents solving "add 3 and 4, then multiply by 2." Both call `add` then `multiply`. One computes `add(3,4)=7, multiply(7,2)=14`. The other computes `add(100,200)=300, multiply(300,2)=600`.
+The parser accepts one complete action per turn. It does not remove repeats or
+scan past invalid text. The same text instructions and action-feedback engine
+are used across providers; the teacher still uses Ollama's structured tool API,
+while the students use text parsing. That interface difference remains a limitation.
 
-A tool-name check scores both a perfect 1.0. The answer is 14. AgentProbe now checks the actual computed answer, so the second trace correctly fails. That single fix is a large part of why the honest numbers differ so much from the original.
-
-## What AgentProbe measures
-
-For every run, on the actual tool outputs (not the model's text):
-
-- **task success**: did it reach the correct final answer.
-- **answer correctness**: computed result vs the task's true answer.
-- **tool-sequence match**: shape only (right tools, right order), named so it is never mistaken for correctness.
-- **step efficiency**: steps vs minimum, reported only for successful runs.
-- **loop and cycle detection**: consecutive repeats and non-adjacent A-B-A-B oscillation, retries after an error excluded.
-- **recovery**: an error occurred but the task still succeeded.
-
-## How the evaluation is kept honest
-
-- **Real train/test separation** (`task_gen.py`): 2200 unique task instances, split by whole-problem identity before any data is generated, with two entire task families held out for test only. An automated check (`check_leakage.py`) enforces zero overlap and zero duplicates.
-- **One shared execution loop** (`engine.py`): teacher, tuned student, and untuned student all run the same action-observation loop, one action, see the real result, act again. Invalid actions are recorded as failures, never dropped.
-- **A control baseline**: the untuned 1.5B base model, isolating what fine-tuning added.
-- **Correctness-gated teacher data**: only trajectories that reached the correct answer are kept.
-- **Complete per-run traces** (`traces/`): every attempt is saved with timing, termination reason, model responses, and score, so any number can be audited back to what actually happened.
-
-## Limitations
-
-- The task domain is a controlled calculator (two tools, multi-step chains). A proof of the *method*, not a broad benchmark.
-- The figures come from a single 100-task run at one run per task, so exact percentages carry sampling noise; the qualitative finding (large gain from fine-tuning, still below the teacher) is stable and was verified against saved traces.
-- The distilled model runs in-process; a GGUF/Ollama export was attempted and failed on an Unsloth bug, so it is not a portable artifact.
-
-## Running it
-
-Requires Python 3.11+ and [Ollama](https://ollama.com). The eval, scorer,
-benchmark, and dashboard run on CPU. Distillation and running the student model
-require an NVIDIA GPU (install the `[gpu]` extra).
+## CPU quick start
 
 ```bash
 git clone https://github.com/hemachandra666/agentprobe.git
 cd agentprobe
+uv sync --locked --dev
+uv run --locked pytest -q
+uv run --locked python -m agentprobe.check_leakage
+uv run --locked python -m agentprobe.replay --input traces/comparison_runs.jsonl
+```
 
-# core install (CPU: eval, scorer, dashboard)
-uv sync
-# for distillation and the student model (GPU):
-#   uv pip install -e ".[gpu]"
-#   on new GPUs you may need a specific torch build; see https://pytorch.org
+The corrected pipeline passed 46 tests. The supplied dataset contains 1,441
+training questions and 759 test questions, with zero exact question overlap
+and zero within-split duplicates.
 
+Replay audits historical evidence. It cannot recover actions the old parser
+omitted, and its output is not a fresh model benchmark.
+
+The wheel includes example train/test data. Loaders prefer an explicit data
+path, then `./data` if present, then the packaged examples. `task_gen` generates
+working datasets in `./data`. Install-time paths are not used for outputs.
+
+## Teacher evaluation
+
+Install and start Ollama, then pull the teacher. A GPU is optional for Ollama,
+but running these models on a CPU can be slow.
+
+```bash
 ollama pull qwen2.5:7b
+uv run --locked python -m agentprobe.run_eval --max-tasks 10 --runs 1
+uv run --locked python -m agentprobe.benchmark --models qwen2.5:7b --max-tasks 10
 ```
 
-Full honest pipeline, in order:
+Each experiment writes to a new `runs/<experiment_id>/` directory. Complete
+records include zero-call runs, termination, raw responses, typed errors and
+scores. Failed experiments retain evidence. Summaries include per-family results.
+
+## GPU training and comparison
+
+The revised pipeline completed model loading, training, and evaluation on an
+**NVIDIA GeForce RTX 5080 Laptop GPU with 16 GB VRAM**, running WSL Linux
+and Python 3.11.16.
+
+A separate GPU environment was used:
 
 ```bash
-# 1. generate unique tasks and the leak-free train/test split
-uv run python -m agentprobe.task_gen
-uv run python -m agentprobe.check_leakage      # asserts zero overlap, zero dupes
+uv venv --python 3.11 .venv-gpu
 
-# 2. (GPU) generate correctness-gated teacher trajectories
-uv run python -m agentprobe.generate_teacher --runs 3
+uv pip install --python .venv-gpu/bin/python \
+  -e ".[gpu]" \
+  "torch==2.8.0+cu128" \
+  "torchvision==0.23.0+cu128" \
+  "xformers==0.0.32.post2" \
+  "torchao==0.13.0" \
+  "unsloth==2026.9.8" \
+  "unsloth-zoo==2026.9.7" \
+  --default-index https://pypi.org/simple \
+  --extra-index-url https://download.pytorch.org/whl/cu128 \
+  --index-strategy unsafe-best-match
 
-# 3. (GPU) format training data and distil the student
-uv run python -m agentprobe.prepare_training
-uv run python -m agentprobe.train_student --epochs 3
-
-# 4. (GPU) the honest three-way comparison on UNSEEN tasks
-uv run python -m agentprobe.compare --runs 1 --max-tasks 100
-
-# 5. view the result
-uv run streamlit run src/agentprobe/dashboard.py
+uv pip check --python .venv-gpu/bin/python
 ```
 
-The scorer unit tests run on CPU with no model or GPU:
+This records the installation approach used, not a complete GPU lockfile.
+The tested environment also contained Transformers 5.5.0 and TRL 0.24.0.
+Unpinned dependencies may resolve differently on future installations.
+The index strategy considers matching packages across both listed indexes.
+
+Unsloth warned that the installed TorchAO integration was unusable and bypassed
+it. LoRA training and inference nevertheless completed successfully.
+
+Use `.venv-gpu/bin/python` directly for GPU commands. The CPU development
+environment managed by `uv run` is separate.
+
+The experiment used these stages:
 
 ```bash
-uv run python -m pytest tests/ -v
+.venv-gpu/bin/python -m agentprobe.check_leakage
+.venv-gpu/bin/python -m agentprobe.generate_teacher --runs 1 --max-tasks 1000
+.venv-gpu/bin/python -m agentprobe.prepare_training
+.venv-gpu/bin/python -m agentprobe.train_student --epochs 1
+.venv-gpu/bin/python -m agentprobe.compare \
+  --models teacher untuned tuned \
+  --max-tasks 759 \
+  --runs 1
 ```
 
-## Repository contents
+Back up existing generated datasets and `student_lora/` before rerunning:
+generation, preparation, and training reuse their output paths.
 
-    src/agentprobe/
-      task_gen.py          generate unique tasks, split with family holdouts
-      check_leakage.py     automated train/test leakage check
-      engine.py            the shared action-observation loop (all models)
-      agent.py             teacher provider (Ollama, structured tools)
-      student_agent.py     tuned and untuned student providers
-      scorer.py            honest scorers (task success, answer correctness, loops)
-      generate_teacher.py  correctness-gated teacher data
-      train_student.py     QLoRA distillation
-      compare.py           teacher vs untuned vs tuned, on unseen tasks
-      dashboard.py         the Streamlit dashboard
-    tests/                 scorer unit tests, including the 600-vs-14 case
+The recorded teacher generation retained 656 clean successful trajectories,
+producing 1,730 training and 319 validation next-action examples.
+
+Training used the 4-bit `unsloth/Qwen2.5-1.5B-Instruct` base, LoRA rank 16,
+alpha 16, and 18,464,768 trainable parameters.
+
+An exploratory three-epoch run showed worsening validation loss after epoch 1.
+A fresh one-epoch run was selected using validation loss before final-test
+evaluation. It completed 217 optimizer steps in approximately 298 seconds,
+with validation loss 0.09077.
+
+`prepare_training` splits whole training questions into train/validation groups,
+checks them against final-test tasks, and writes next-action examples with real
+observations. A manifest hashes both files. `train_student` rejects stale inputs.
+
+The current trainer saves the final adapter; automatic selection of the best
+validation checkpoint remains an improvement.
+
+Keep final-test tasks out of checkpoint/hyperparameter selection. Further
+changes informed by the inspected test failures require a fresh held-out
+evaluation while preserving the original result.
+
+## Dashboard
+
+```bash
+uv run --locked streamlit run src/agentprobe/dashboard.py
+```
+
+Open http://localhost:8501.
+
+The dashboard defaults to the published evidence when available. Expand
+**Choose evaluation file** to select another experiment's `comparison.json`.
+
+For this experiment, use:
+
+```text
+docs/results/2026-09-22/comparison.json
+```
+
+The dashboard labels historical or incomplete files and does not present them
+as validated current results.
+
+![AgentProbe evaluation dashboard](docs/images/dashboard.png)
+
+## Limits and interpretation
+
+- Only two calculator tools and synthetic integer chains are covered. Correct
+  final answers do not prove general reasoning or appropriate intermediate arguments.
+- Fixed reference paths are diagnostics, not a proof that other paths are invalid.
+- Untuned performance measures this exact prompt, protocol and parser. It does
+  not establish that a model is generally incapable of tool use.
+- An audit found 26 test questions mathematically equivalent to questions in the
+  full training pool after swapping the first two operands. Of the prepared
+  examples, 12 test questions have equivalents in training and 2 in validation.
+  Excluding all 26 as a post-hoc sensitivity check gives tuned success of
+  690/733 (94.13%); this does not replace the original benchmark. Future datasets
+  should group equivalent questions before splitting.
+- Exact question separation does not establish absence of semantic similarity.
+  The two held-out task families account for 400 of the 759 test tasks.
+- Zero tool execution errors does not mean zero parsing errors or incorrect
+  answers. These metrics must be interpreted separately.
+- Sampling uncertainty, multiple training seeds, broader task domains, and controlled
+  GPU memory/latency measurements remain future work. Smaller parameter count alone
+  does not demonstrate measured performance savings.
+- A deadline bounds how long the engine waits. Python cannot cancel an already
+  running GPU/native call in its daemon worker. The comparison aborts after timeout;
+  stop the process before restarting. Hard GPU cancellation needs process isolation.
+- Ollama requests use a timeout and fixed generation options. Students use greedy
+  generation with an output-token cap. Immutable model revisions, adapter hashes,
+  and a complete GPU dependency lock remain reproducibility improvements.
+
+See [the implementation handoff](docs/FIX_HANDOFF.md) for the original changes
+and planned checks. GPU training and evaluation have since completed as
+documented above.
+
+## Capturing the GPU environment
+
+Run `.venv-gpu/bin/python scripts/capture_gpu_environment.py` on the machine
+used for inference. It records the currently installed package versions in
+`requirements-gpu.txt` and hardware details in `docs/results/2026-09-22/gpu_environment.json`.
+The snapshot excludes the editable project path. It is environment evidence,
+not a validated portable lockfile; use the documented CUDA indexes when testing
+a clean installation. Capture time is recorded separately from experiment time.
 
 ## License
 

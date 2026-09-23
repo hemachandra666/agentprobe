@@ -1,6 +1,6 @@
 """Minimal model client. Wraps a local Ollama model behind one call."""
 from __future__ import annotations
-import ollama
+
 
 DEFAULT_MODEL = "qwen2.5:7b"
 
@@ -11,7 +11,9 @@ def chat(messages, model: str = DEFAULT_MODEL, tools=None):
     messages: list of {"role": ..., "content": ...}
     tools:    optional list of tool schemas for tool-calling
     """
-    return ollama.chat(model=model, messages=messages, tools=tools)
+    import ollama
+    return ollama.Client(timeout=60).chat(model=model, messages=messages, tools=tools,
+                                         options={"temperature": 0, "seed": 42, "num_predict": 120})
 
 
 if __name__ == "__main__":

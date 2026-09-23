@@ -1,20 +1,16 @@
-"""QLoRA fine-tune the student on the honest teacher conversations.
+"""QLoRA training on versioned next-action train and validation examples.
 
-Trains on the correct-answer-gated data. The real overfitting check is NOT a
-held-out slice of these conversations; it is evaluation on genuinely unseen
-tasks (data/test_tasks.jsonl, P0-1), run later through the shared engine.
-
-Usage:
-  uv run --no-sync python -m agentprobe.train_student --epochs 3
+Final-test questions are excluded by prepare_training. GPU compatibility must
+be smoke-tested on the target machine before a full experiment.
 """
 from __future__ import annotations
-import argparse
+import argparse, json, hashlib
 from pathlib import Path
 from unsloth import FastLanguageModel
 from datasets import load_dataset
 from trl import SFTTrainer, SFTConfig
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path.cwd()
 TRAIN_DATA = str(ROOT / "train_conversations.jsonl")
 OUTPUT_DIR = str(ROOT / "student_lora")
 
@@ -28,6 +24,13 @@ def parse_args():
 
 def main() -> None:
     args = parse_args()
+    manifest = json.loads((ROOT / "training_split.json").read_text())
+    if manifest.get("schema_version") != "2.0":
+        raise ValueError("Regenerate next-action data with prepare_training")
+    for split in ("train", "validation"):
+        content = (ROOT / f"{split}_conversations.jsonl").read_bytes()
+        if hashlib.sha256(content).hexdigest() != manifest[split + "_sha256"]:
+            raise ValueError("Training data changed since validation split was created")
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name="unsloth/Qwen2.5-1.5B-Instruct",
@@ -52,10 +55,13 @@ def main() -> None:
 
     train_ds = train_ds.map(to_text)
 
+    eval_ds = load_dataset("json", data_files=str(ROOT / "validation_conversations.jsonl"), split="train").map(to_text)
+
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=train_ds,
+        eval_dataset=eval_ds,
         args=SFTConfig(
             per_device_train_batch_size=2,
             gradient_accumulation_steps=4,
@@ -64,6 +70,7 @@ def main() -> None:
             max_steps=args.max_steps,
             learning_rate=2e-4,
             logging_steps=5,
+            eval_strategy="epoch",
             optim="adamw_8bit",
             seed=42,
             output_dir=OUTPUT_DIR,

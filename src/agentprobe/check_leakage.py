@@ -3,12 +3,12 @@ from __future__ import annotations
 import json, sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data"
+from .tasks_io import data_root
+DATA = data_root()
 
 
 def load_questions(path):
-    return [json.loads(l)["question"] for l in open(path)]
+    return [json.loads(l)["question"] for l in path.read_text().splitlines()]
 
 
 def main() -> None:

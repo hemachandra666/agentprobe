@@ -12,7 +12,7 @@ import json, random
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path.cwd()
 OUT_DIR = ROOT / "data"
 SEED = 42
 INSTANCES_PER_FAMILY = 200  # unique instances generated per family

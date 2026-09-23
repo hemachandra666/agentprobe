@@ -36,7 +36,10 @@ def parse_args():
     p.add_argument("--runs", type=int, default=3, help="runs per task (default 3)")
     p.add_argument("--max-tasks", type=int, default=200,
                    help="cap number of train tasks to sample (default 200)")
-    return p.parse_args()
+    args = p.parse_args()
+    if args.runs < 1 or args.max_tasks < 1:
+        p.error("--runs and --max-tasks must be positive")
+    return args
 
 
 def main() -> None:
@@ -51,7 +54,7 @@ def main() -> None:
         for _ in range(args.runs):
             total += 1
             traj = agent.run(task.task_id, task.question, model=TEACHER)
-            if scorer.task_success(traj, task):  # HONEST gate: correct answer
+            if scorer.task_success(traj, task) and scorer.error_count(traj) == 0:  # HONEST gate: correct answer
                 success += 1
                 kept.append(to_training_example(traj, task))
         if i % 25 == 0:

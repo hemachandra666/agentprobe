@@ -41,6 +41,12 @@ dependencies = [
     { name = "pandas" },
     { name = "pyyaml" },
     { name = "streamlit" },
+]
+
+[package.optional-dependencies]
+gpu = [
+    { name = "datasets" },
+    { name = "trl" },
     { name = "unsloth" },
 ]
 
@@ -51,12 +57,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "datasets", marker = "extra == 'gpu'", specifier = ">=3.0.0" },
     { name = "ollama", specifier = ">=0.6.2" },
     { name = "pandas", specifier = ">=3.0.5" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "streamlit", specifier = ">=1.62.0" },
-    { name = "unsloth", specifier = ">=2026.9.6" },
+    { name = "trl", marker = "extra == 'gpu'", specifier = ">=0.12.0" },
+    { name = "unsloth", marker = "extra == 'gpu'", specifier = ">=2026.9.6" },
 ]
+provides-extras = ["gpu"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.1.1" }]

@@ -22,7 +22,7 @@ class OllamaProvider(engine.Provider):
             {"role": "system", "content": engine.SYSTEM},
             {"role": "user", "content": question},
         ]
-        for entry in history:
+        for index, entry in enumerate(history):
             kind = entry[0]
             if kind == "call":
                 _, tool, args = entry
@@ -33,7 +33,11 @@ class OllamaProvider(engine.Provider):
                     "tool_calls": [{"function": {"name": tool, "arguments": args}}],
                 })
             elif kind == "observation":
-                messages.append({"role": "tool", "content": str(entry[1]), "name": "tool"})
+                if index and history[index - 1][0] == "call":
+                    messages.append({"role": "tool", "content": str(entry[1]),
+                                     "name": history[index - 1][1]})
+                else:
+                    messages.append({"role": "user", "content": str(entry[1])})
             elif kind == "assistant":
                 messages.append({"role": "assistant", "content": str(entry[1])})
         return messages
@@ -43,18 +47,28 @@ class OllamaProvider(engine.Provider):
         resp = model_client.chat(messages, model=self.model, tools=tools.SCHEMAS)
         msg = resp["message"]
         calls = msg.get("tool_calls") or []
-        raw = _clean_content(msg)
+        raw = json.dumps(msg.model_dump() if hasattr(msg, "model_dump") else msg, default=str)
+
+        if not isinstance(calls, list):
+            return engine.Action(None, None, None, raw, error="tool_calls must be a list")
+        if len(calls) > 1:
+            return engine.Action(None, None, None, raw, error="multiple tool calls in one turn")
 
         if calls:
             call = calls[0]
+            try:
+                function = call["function"]
+                name, arguments = function["name"], function["arguments"]
+            except (KeyError, TypeError):
+                return engine.Action(None, None, None, raw, error="malformed structured call")
             return engine.Action(
-                tool=call["function"]["name"],
-                args=call["function"]["arguments"],
+                tool=name,
+                args=arguments,
                 final_answer=None,
                 raw=raw,
             )
 
-        return engine.Action(tool=None, args=None, final_answer=raw, raw=raw)
+        return engine.Action(tool=None, args=None, final_answer=_clean_content(msg), raw=raw)
 
 
 def run(task_id: str, question: str, model: str = DEFAULT_MODEL):

@@ -1,16 +1,17 @@
-"""Records an agent run as an ordered trajectory of steps."""
+"""Serializable run evidence, including failures and zero-call attempts."""
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
-import json, time
-
+from pathlib import Path
+import json, time, uuid
 
 @dataclass
 class Step:
-    index: int              # order of this step, starting at 0
-    tool: str               # which tool was called
-    args: dict              # the arguments passed to it
-    result: str             # what the tool returned
-
+    index: int
+    tool: str
+    args: object
+    result: str
+    status: str = "ok"
+    kind: str = "tool"
 
 @dataclass
 class Trajectory:
@@ -18,24 +19,26 @@ class Trajectory:
     steps: list[Step] = field(default_factory=list)
     final_answer: str = ""
     started_at: float = field(default_factory=time.time)
+    ended_at: float | None = None
+    termination: str = "unknown"
+    responses: list[str] = field(default_factory=list)
+    run_id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
-    def add_step(self, tool: str, args: dict, result: str) -> None:
-        self.steps.append(Step(index=len(self.steps), tool=tool, args=args, result=str(result)))
+    def add_step(self, tool, args, result, *, status=None, kind="tool"):
+        # Prefix inference is only a compatibility path for legacy traces.
+        status = status or ("error" if str(result).startswith("error:") else "ok")
+        self.steps.append(Step(len(self.steps), tool, args, str(result), status, kind))
 
     @property
-    def step_count(self) -> int:
+    def step_count(self):
         return len(self.steps)
 
-    def tool_sequence(self) -> list[str]:
+    def tool_sequence(self):
         return [s.tool for s in self.steps]
 
-    def to_dict(self) -> dict:
-        d = asdict(self)
-        d["step_count"] = self.step_count
-        return d
-    
-    def save(self, path: str) -> None:
-        from pathlib import Path
+    def to_dict(self):
+        return {**asdict(self), "step_count": self.step_count}
+
+    def save(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w") as f:
-            json.dump(self.to_dict(), f, indent=2)
+        Path(path).write_text(json.dumps(self.to_dict(), indent=2))
