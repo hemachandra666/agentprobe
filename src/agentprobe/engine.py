@@ -40,6 +40,8 @@ def _act_before_deadline(provider, question, history, seconds):
     Callers must stop the experiment after timeout to avoid overlapping GPU work.
     Tool execution occurs only in the main loop, never in this worker.
     """
+    if hasattr(provider, "act_before_deadline"):
+        return provider.act_before_deadline(question, history, seconds)
     result = queue.Queue(maxsize=1)
     def invoke():
         try:

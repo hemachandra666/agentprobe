@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "scope": "Controlled stall in a model-loaded worker, not a simulated CUDA kernel hang.",
+  "warm_score": {
+    "task_id": "timeout_smoke",
+    "task_success": true,
+    "answer_correct": true,
+    "tool_result_correct": true,
+    "completed": true,
+    "tool_sequence_match": 1.0,
+    "step_efficiency": 1.0,
+    "loops": 0,
+    "cycle": false,
+    "error_rate": 0.0,
+    "recovered": null,
+    "steps": 1,
+    "final_answer": "7.0"
+  },
+  "terminated_pid": 46453,
+  "termination": "timeout",
+  "worker_exited": true,
+  "exitcode": -15,
+  "restart_pid": 46593,
+  "restart_score": {
+    "task_id": "timeout_smoke",
+    "task_success": true,
+    "answer_correct": true,
+    "tool_result_correct": true,
+    "completed": true,
+    "tool_sequence_match": 1.0,
+    "step_efficiency": 1.0,
+    "loops": 0,
+    "cycle": false,
+    "error_rate": 0.0,
+    "recovered": null,
+    "steps": 1,
+    "final_answer": "7.0"
+  },
+  "replacement_exited": true,
+  "replacement_exitcode": 0
+}

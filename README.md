@@ -70,7 +70,7 @@ uv run --locked python -m agentprobe.check_leakage
 uv run --locked python -m agentprobe.replay --input docs/results/2026-09-22/comparison_runs.jsonl
 ```
 
-The consolidated reliability suite passes 83 CPU tests. The supplied dataset contains 1,441
+The consolidated reliability suite passes 91 CPU tests. The supplied dataset contains 1,441
 training questions and 759 test questions, with zero exact question overlap
 and zero within-split duplicates.
 
@@ -295,9 +295,10 @@ as validated current results.
 - Sampling uncertainty, multiple training seeds, broader task domains, and controlled
   GPU memory/latency measurements remain future work. Smaller parameter count alone
   does not demonstrate measured performance savings.
-- A deadline bounds how long the engine waits. Python cannot cancel an already
-  running GPU/native call in its daemon worker. The comparison aborts after timeout;
-  stop the process before restarting. Hard GPU cancellation needs process isolation.
+- Student comparisons use spawned inference workers that are terminated and joined
+  on timeout and closed between models. Direct custom-provider calls retain the
+  thread fallback, and Ollama server-side cancellation remains separate.
+  See [process isolation and GPU verification](docs/PROCESS_TIMEOUT.md).
 - Ollama requests use a timeout and fixed generation options. Students use greedy
   generation with an output-token cap. Immutable model revisions, adapter hashes,
   and a complete GPU dependency lock remain reproducibility improvements.

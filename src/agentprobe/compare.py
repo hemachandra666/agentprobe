@@ -7,6 +7,7 @@ from pathlib import Path
 from . import agent, student_agent, scorer, engine
 from .tasks_io import load_test
 from .trajectory import Trajectory
+from .process_provider import ProcessProvider
 
 SCORER_VERSION = "2.0"
 
@@ -101,6 +102,7 @@ def main(default_models=None):
     out.mkdir(parents=True)
     metadata = {"experiment_id": experiment, "scorer_version": SCORER_VERSION,
                 "status": "running", "num_test_tasks": len(tasks), "runs_per_task": args.runs,
+                "student_execution": "spawn_process",
                 "python": platform.python_version(), "models_requested": args.models,
                 "task_sha256": hashlib.sha256(json.dumps([asdict(t) for t in tasks], sort_keys=True).encode()).hexdigest(),
                 "generation": {"ollama": {"temperature": 0, "seed": 42, "num_predict": 120},
@@ -118,7 +120,11 @@ def main(default_models=None):
                 else:
                     model = "qwen2.5:7b" if name == "teacher" else name
                     factory, label = lambda m=model: agent.OllamaProvider(m), "teacher (qwen2.5:7b)" if name == "teacher" else model
-                result = eval_provider(factory, label, tasks, args.runs, experiment, trace_file)
+                if name in {"tuned", "untuned"}:
+                    with ProcessProvider(factory) as worker:
+                        result = eval_provider(lambda: worker, label, tasks, args.runs, experiment, trace_file)
+                else:
+                    result = eval_provider(factory, label, tasks, args.runs, experiment, trace_file)
                 results.append(result)
                 print(label, result["task_success_rate"])
         metadata["status"] = "complete"
