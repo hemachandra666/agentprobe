@@ -24,3 +24,6 @@ jobs:
           cd "$RUNNER_TEMP"
           "$GITHUB_WORKSPACE/.wheel-smoke/bin/python" -m agentprobe.check_leakage
           "$GITHUB_WORKSPACE/.wheel-smoke/bin/python" -m agentprobe.run_eval --help
+          mkdir -p "$RUNNER_TEMP/agentprobe-wheel-work"
+          cd "$RUNNER_TEMP/agentprobe-wheel-work"
+          "$GITHUB_WORKSPACE/.wheel-smoke/bin/python" "$GITHUB_WORKSPACE/scripts/wheel_smoke.py"

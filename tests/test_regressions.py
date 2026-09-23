@@ -172,10 +172,11 @@ def test_replay_preserves_parse_error_runs(tmp_path, monkeypatch):
     import sys
     from agentprobe import replay
     from types import SimpleNamespace
-    task = SimpleNamespace(task_id="replay_parse", answer=7.0,
+    task = SimpleNamespace(task_id="replay_parse", question="Add 3 and 4.", answer=7.0,
                            reference_tools=["add"], min_steps=1)
     record = {
         "task_id": task.task_id, "model": "fixture",
+        "question": task.question, "true_answer": task.answer,
         "final_answer": "Answer: 7", "termination": "model_final",
         "steps": [
             {"tool": "(parse)", "args": {}, "result": "bad format",
