@@ -183,6 +183,68 @@ Keep final-test tasks out of checkpoint/hyperparameter selection. Further
 changes informed by the inspected test failures require a fresh held-out
 evaluation while preserving the original result.
 
+## Download the student adapter
+
+The experimental [Student v1.0.0 pre-release](https://github.com/hemachandra666/agentprobe/releases/tag/student-v1.0.0)
+includes the LoRA adapter, tokenizer, model card, training history,
+dependency snapshot, and checksums. Base-model weights are downloaded separately.
+
+Download these two release assets into the same directory:
+
+- `agentprobe-student-v1.tar.gz`
+- `agentprobe-student-v1.tar.gz.sha256`
+
+From that directory, verify the archive before extracting it:
+
+```bash
+sha256sum -c agentprobe-student-v1.tar.gz.sha256
+```
+
+Continue only if verification reports `OK`. Extract into a new directory:
+
+```bash
+mkdir student-v1-extracted
+tar -xzf agentprobe-student-v1.tar.gz -C student-v1-extracted
+(cd student-v1-extracted/agentprobe-student-v1 && sha256sum -c SHA256SUMS)
+```
+
+All ten packaged files should report `OK`.
+
+### Load the released adapter
+
+Use the GPU environment described above. From the AgentProbe repository,
+run the following with the absolute path to your extracted adapter folder:
+
+```bash
+.venv-gpu/bin/python - /absolute/path/student-v1-extracted/agentprobe-student-v1 <<'PYTHON'
+import sys
+from pathlib import Path
+import unsloth
+from agentprobe import student_agent
+
+adapter = Path(sys.argv[1]).resolve()
+assert (adapter / "adapter_model.safetensors").is_file(), adapter
+student_agent.ADAPTER_DIR = str(adapter)
+student_agent._tuned = None
+student_agent._load_tuned()
+
+trajectory = student_agent.run("release_example", "Add 3 and 4.")
+for step in trajectory.steps:
+    print(step.tool, step.args, step.result, step.status)
+print("Final answer:", trajectory.final_answer)
+print("Termination:", trajectory.termination)
+PYTHON
+```
+
+The local release copy passed this calculator smoke test on an RTX 5080
+Laptop GPU, returning 7. This verifies loading and one task in the existing
+environment; clean-install reproduction remains pending.
+
+The released weights match final checkpoint 217 (one epoch). The historical
+94.33% benchmark did not record an adapter checksum, so it is not a fresh
+evaluation of the downloadable package. The exact training-time base revision
+remains unverified. See the packaged model card for provenance and limitations.
+
 ## Dashboard
 
 ```bash
