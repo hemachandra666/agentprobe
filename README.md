@@ -200,6 +200,12 @@ as validated current results.
 - Fixed reference paths are diagnostics, not a proof that other paths are invalid.
 - Untuned performance measures this exact prompt, protocol and parser. It does
   not establish that a model is generally incapable of tool use.
+- An audit found 26 test questions mathematically equivalent to questions in the
+  full training pool after swapping the first two operands. Of the prepared
+  examples, 12 test questions have equivalents in training and 2 in validation.
+  Excluding all 26 as a post-hoc sensitivity check gives tuned success of
+  690/733 (94.13%); this does not replace the original benchmark. Future datasets
+  should group equivalent questions before splitting.
 - Exact question separation does not establish absence of semantic similarity.
   The two held-out task families account for 400 of the 759 test tasks.
 - Zero tool execution errors does not mean zero parsing errors or incorrect
@@ -217,6 +223,15 @@ as validated current results.
 See [the implementation handoff](docs/FIX_HANDOFF.md) for the original changes
 and planned checks. GPU training and evaluation have since completed as
 documented above.
+
+## Capturing the GPU environment
+
+Run `.venv-gpu/bin/python scripts/capture_gpu_environment.py` on the machine
+used for inference. It records the currently installed package versions in
+`requirements-gpu.txt` and hardware details in `docs/results/2026-09-22/gpu_environment.json`.
+The snapshot excludes the editable project path. It is environment evidence,
+not a validated portable lockfile; use the documented CUDA indexes when testing
+a clean installation. Capture time is recorded separately from experiment time.
 
 ## License
 

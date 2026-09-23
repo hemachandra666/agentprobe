@@ -114,7 +114,7 @@ chart = pd.DataFrame(
     ]
 ).set_index("Model")
 
-st.bar_chart(chart)
+st.bar_chart(chart[["Task success (%)"]])
 
 summary = pd.DataFrame(
     [
@@ -137,7 +137,7 @@ summary = pd.DataFrame(
     ]
 )
 
-st.dataframe(summary, hide_index=True, use_container_width=True)
+st.dataframe(summary, hide_index=True, width="stretch")
 
 st.caption(
     "Tool error rate measures failed tool executions. Parsing errors and "
@@ -178,7 +178,7 @@ for model in models:
         st.dataframe(
             family_table,
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
 
 st.info(

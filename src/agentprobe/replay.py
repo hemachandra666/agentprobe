@@ -26,7 +26,8 @@ def main():
         tool_steps = [s for s in traj.steps if s.kind == 'tool']
         failed = sum(is_error(s) for s in tool_steps)
         score.update(tool_calls=len(tool_steps),failed_tool_calls=failed,
-                     tool_error_rate=failed/len(tool_steps) if tool_steps else 0)
+                     tool_error_rate=failed/len(tool_steps) if tool_steps else 0,
+                     parse_errors=sum(s.kind == "parse" for s in traj.steps))
         groups[record['model']].append(score)
     result = {'status':'replay_only','scorer_version':'2.0',
               'warning':'Rescoring cannot restore actions discarded by the old parser. Fresh inference is required.',

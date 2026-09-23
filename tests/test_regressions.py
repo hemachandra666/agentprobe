@@ -166,3 +166,32 @@ def test_malformed_teacher_call_preserves_raw_response(monkeypatch):
     monkeypatch.setattr(agent.model_client,"chat",lambda *a,**kw:{"message":{"tool_calls":[{}]}})
     action=agent.OllamaProvider().act("q",[])
     assert action.error and 'tool_calls' in action.raw
+
+
+def test_replay_preserves_parse_error_runs(tmp_path, monkeypatch):
+    import sys
+    from agentprobe import replay
+    from types import SimpleNamespace
+    task = SimpleNamespace(task_id="replay_parse", answer=7.0,
+                           reference_tools=["add"], min_steps=1)
+    record = {
+        "task_id": task.task_id, "model": "fixture",
+        "final_answer": "Answer: 7", "termination": "model_final",
+        "steps": [
+            {"tool": "(parse)", "args": {}, "result": "bad format",
+             "status": "error", "kind": "parse"},
+            {"tool": "add", "args": {"a": 3, "b": 4}, "result": "7",
+             "status": "ok", "kind": "tool"},
+        ],
+    }
+    source, output = tmp_path / "trace.jsonl", tmp_path / "summary.json"
+    source.write_text(json.dumps(record) + "\n")
+    monkeypatch.setattr(replay, "load_test", lambda: [task])
+    monkeypatch.setattr(sys, "argv", ["replay", "--input", str(source),
+                                     "--output", str(output)])
+    replay.main()
+    summary = json.loads(output.read_text())["models"][0]
+    assert summary["parse_error_runs"] == 1
+    assert summary["task_success_rate"] == 1
+    assert summary["error_rate_micro"] == 0
+    assert summary["recovery_rate"] == 1
