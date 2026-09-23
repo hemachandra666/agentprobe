@@ -6,6 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 from . import agent, student_agent, scorer, engine
 from .tasks_io import load_test
+from .trajectory import Trajectory
 
 SCORER_VERSION = "2.0"
 
@@ -31,6 +32,8 @@ def summarize(rows):
         "recovery_rate": sum(recovered) / len(recovered) if recovered else None,
         "errored_runs": len(recovered),
         "parse_error_runs": sum(r.get("parse_errors", 0) > 0 for r in rows),
+        "provider_error_runs": sum(r.get("termination") == "provider_error" for r in rows),
+        "timeout_runs": sum(r.get("termination") == "timeout" for r in rows),
         "total_runs": n,
     }
 
@@ -38,7 +41,15 @@ def eval_provider(provider_factory, label, tasks, runs, experiment_id, trace_fil
     rows = []
     for task in tasks:
         for _ in range(runs):
-            traj = engine.run(task.task_id, task.question, provider_factory())
+            try:
+                provider = provider_factory()
+            except Exception as exc:
+                traj = Trajectory(task.task_id, termination="provider_error")
+                traj.add_step("(provider)", {}, str(exc), status="error", kind="provider")
+                import time
+                traj.ended_at = time.time()
+            else:
+                traj = engine.run(task.task_id, task.question, provider)
             try:
                 score = scorer.score_one(traj, task)
             except Exception as e:
@@ -47,6 +58,7 @@ def eval_provider(provider_factory, label, tasks, runs, experiment_id, trace_fil
                 trace_file.flush()
                 raise RuntimeError("scoring failed; run evidence was preserved") from e
             score["family"] = task.family
+            score["termination"] = traj.termination
             tool_steps = [s for s in traj.steps if s.kind == "tool"]
             score["tool_calls"] = len(tool_steps)
             score["failed_tool_calls"] = sum(scorer.is_error(s) for s in tool_steps)
@@ -54,8 +66,10 @@ def eval_provider(provider_factory, label, tasks, runs, experiment_id, trace_fil
             score["parse_errors"] = sum(s.kind == "parse" for s in traj.steps)
             trace_file.write(json.dumps(engine.run_record(traj, task, label, experiment_id, score)) + "\n")
             trace_file.flush()
-            if traj.termination == "timeout":
-                raise RuntimeError("run timed out; trace saved. Stop process before restarting inference")
+            if traj.termination in {"timeout", "provider_error", "invalid_action_shape"}:
+                raise RuntimeError(
+                    f"inference failed ({traj.termination}); trace saved. "
+                    "Stop process before restarting inference")
             rows.append(score)
     families = defaultdict(list)
     for row in rows:
@@ -108,7 +122,7 @@ def main(default_models=None):
                 results.append(result)
                 print(label, result["task_success_rate"])
         metadata["status"] = "complete"
-    except Exception as e:
+    except (Exception, KeyboardInterrupt) as e:
         metadata.update(status="failed", error=str(e))
         raise
     finally:

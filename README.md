@@ -67,15 +67,18 @@ cd agentprobe
 uv sync --locked --dev
 uv run --locked pytest -q
 uv run --locked python -m agentprobe.check_leakage
-uv run --locked python -m agentprobe.replay --input traces/comparison_runs.jsonl
+uv run --locked python -m agentprobe.replay --input docs/results/2026-09-22/comparison_runs.jsonl
 ```
 
-The corrected pipeline passed 46 tests. The supplied dataset contains 1,441
+The consolidated reliability suite passes 83 CPU tests. The supplied dataset contains 1,441
 training questions and 759 test questions, with zero exact question overlap
 and zero within-split duplicates.
 
-Replay audits historical evidence. It cannot recover actions the old parser
-omitted, and its output is not a fresh model benchmark.
+Replay audits saved evidence, verifies task identity and successful tool arithmetic,
+and checks the matching experiment summary when available. It preserves per-family
+metrics. Use `--data-dir` for an alternate dataset and `--summary` for an explicit
+comparison file. It cannot recover actions omitted by legacy parsers, and replay
+is not fresh inference.
 
 The wheel includes example train/test data. Loaders prefer an explicit data
 path, then `./data` if present, then the packaged examples. `task_gen` generates
@@ -95,6 +98,8 @@ uv run --locked python -m agentprobe.benchmark --models qwen2.5:7b --max-tasks 1
 Each experiment writes to a new `runs/<experiment_id>/` directory. Complete
 records include zero-call runs, termination, raw responses, typed errors and
 scores. Failed experiments retain evidence. Summaries include per-family results.
+Provider failures and timeouts abort a comparison and mark it failed; they are
+not published as a completed model benchmark.
 
 ## GPU training and comparison
 
@@ -147,7 +152,12 @@ The experiment used these stages:
 ```
 
 Back up existing generated datasets and `student_lora/` before rerunning:
-generation, preparation, and training reuse their output paths.
+generation, preparation, and training reuse their output paths. Teacher generation
+accepts `--output` (default `./teacher_data.jsonl`) and records all attempts and
+accepted examples under a unique `runs/teacher-<id>/` directory beside the output.
+A timeout or provider failure aborts generation without replacing the previous
+dataset. Partial evidence remains available. Successful generation replaces the
+requested output atomically. No clean successful examples also leaves old data intact.
 
 The recorded teacher generation retained 656 clean successful trajectories,
 producing 1,730 training and 319 validation next-action examples.
@@ -162,7 +172,9 @@ with validation loss 0.09077.
 
 `prepare_training` splits whole training questions into train/validation groups,
 checks them against final-test tasks, and writes next-action examples with real
-observations. A manifest hashes both files. `train_student` rejects stale inputs.
+observations. Preparation validates each saved task against the canonical training
+dataset, recomputes successful tool arithmetic, and rejects corrupted examples
+before writing outputs. A manifest hashes both files. `train_student` rejects stale inputs.
 
 The current trainer saves the final adapter; automatic selection of the best
 validation checkpoint remains an improvement.
@@ -232,6 +244,9 @@ used for inference. It records the currently installed package versions in
 The snapshot excludes the editable project path. It is environment evidence,
 not a validated portable lockfile; use the documented CUDA indexes when testing
 a clean installation. Capture time is recorded separately from experiment time.
+
+See [the consolidated reliability review](docs/RELIABILITY_REVIEW.md) for the
+verified scope and remaining research and reproducibility work.
 
 ## License
 
