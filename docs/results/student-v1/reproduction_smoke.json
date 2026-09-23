@@ -1,0 +1,26 @@
+{
+  "checked_at_utc": "2026-09-23T03:36:08.542799+00:00",
+  "repository_commit": "60b89c707966230b68ee85ed214a9291e3615a37",
+  "release_tag": "student-v1.0.0",
+  "adapter_sha256": "861283ef78cb45c76cfb2be2123b7d4c30e477cc663eb7d81509d4d5c8e404d7",
+  "torch_version": "2.8.0+cu128",
+  "gpu": "NVIDIA GeForce RTX 5080 Laptop GPU",
+  "question": "Add 3 and 4.",
+  "termination": "model_final",
+  "scores": {
+    "task_id": "fresh_environment_release_smoke",
+    "task_success": true,
+    "answer_correct": true,
+    "tool_result_correct": true,
+    "completed": true,
+    "tool_sequence_match": 1.0,
+    "step_efficiency": 1.0,
+    "loops": 0,
+    "cycle": false,
+    "error_rate": 0.0,
+    "recovered": null,
+    "steps": 1,
+    "final_answer": "7.0"
+  },
+  "scope": "Fresh virtual environment on the same machine; existing base-model cache available."
+}

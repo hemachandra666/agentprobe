@@ -236,9 +236,17 @@ print("Termination:", trajectory.termination)
 PYTHON
 ```
 
-The local release copy passed this calculator smoke test on an RTX 5080
-Laptop GPU, returning 7. This verifies loading and one task in the existing
-environment; clean-install reproduction remains pending.
+The GitHub release was downloaded and its archive and all ten packaged
+files passed checksum verification. In a fresh Python 3.11 virtual environment,
+114 pinned dependencies and a non-editable AgentProbe installation passed
+dependency checks. The downloaded adapter then executed add(3, 4), returning
+7 with task_success=True on an RTX 5080 Laptop GPU.
+
+[Reproduction smoke-test evidence](docs/results/student-v1/reproduction_smoke.json)
+records the adapter hash, repository commit, GPU, and scores. This verifies
+one task in a fresh environment on the same machine with the existing
+base-model cache. It is not a full benchmark rerun; reproduction on another
+machine or without cached base-model files remains unverified.
 
 The released weights match final checkpoint 217 (one epoch). The historical
 94.33% benchmark did not record an adapter checksum, so it is not a fresh
