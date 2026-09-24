@@ -122,3 +122,10 @@ if __name__ == "__main__":
     task = load_test()[0]
     t = run(task.task_id, task.question)
     print(f"tools={t.tool_sequence()} steps={t.step_count} answer={t.final_answer!r}")
+
+def provider_from_adapter(adapter_dir):
+    """Spawn factory: configure adapter inside the worker, not in its parent."""
+    global ADAPTER_DIR, _tuned
+    ADAPTER_DIR = str(Path(adapter_dir).resolve())
+    _tuned = None
+    return StudentProvider()

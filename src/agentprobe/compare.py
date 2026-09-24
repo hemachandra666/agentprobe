@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse, hashlib, json, random, uuid, platform
 from collections import defaultdict
+from functools import partial
 from dataclasses import asdict
 from pathlib import Path
 from . import agent, student_agent, scorer, engine
@@ -83,6 +84,7 @@ def parse_args(default_models=None):
     p.add_argument("--runs", type=int, default=1)
     p.add_argument("--max-tasks", type=int, default=100)
     p.add_argument("--data-dir", type=Path)
+    p.add_argument("--adapter-dir", type=Path)
     p.add_argument("--output-dir", type=Path, default=Path("runs"))
     p.add_argument("--models", nargs="+", default=default_models or ["teacher", "untuned", "tuned"])
     a = p.parse_args()
@@ -93,6 +95,7 @@ def parse_args(default_models=None):
 def main(default_models=None):
     args = parse_args(default_models)
     tasks = load_test(args.data_dir)
+    adapter_dir = getattr(args, "adapter_dir", None)
     random.Random(42).shuffle(tasks)
     tasks = tasks[:args.max_tasks]
     if not tasks:
@@ -103,6 +106,7 @@ def main(default_models=None):
     metadata = {"experiment_id": experiment, "scorer_version": SCORER_VERSION,
                 "status": "running", "num_test_tasks": len(tasks), "runs_per_task": args.runs,
                 "student_execution": "spawn_process",
+                "adapter_dir": str(adapter_dir.resolve()) if adapter_dir else None,
                 "python": platform.python_version(), "models_requested": args.models,
                 "task_sha256": hashlib.sha256(json.dumps([asdict(t) for t in tasks], sort_keys=True).encode()).hexdigest(),
                 "generation": {"ollama": {"temperature": 0, "seed": 42, "num_predict": 120},
@@ -115,6 +119,8 @@ def main(default_models=None):
             for name in args.models:
                 if name == "tuned":
                     factory, label = student_agent.StudentProvider, "tuned student (1.5B distilled)"
+                    if adapter_dir is not None:
+                        factory = partial(student_agent.provider_from_adapter, str(adapter_dir.resolve()))
                 elif name == "untuned":
                     factory, label = student_agent.BaseStudentProvider, "untuned student (1.5B base)"
                 else:

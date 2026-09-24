@@ -1,0 +1,22 @@
+{
+  "dataset_version": "2.0",
+  "seed": 43,
+  "operand_range": [
+    1,
+    100
+  ],
+  "group_policy": "associative_commutative_expression_v1",
+  "excludes_packaged_v1_groups": true,
+  "family_holdout": [
+    "f_len5_b",
+    "f_mul_add_mul"
+  ],
+  "counts": {
+    "train": 1440,
+    "test": 760
+  },
+  "sha256": {
+    "train": "83a00ced21704bad3abfad920e2a483e27fd426fe79a957377bf4869e2e9ba91",
+    "test": "8939eba20094efb51f08229a8b069ee55c54881f2688f29ec3f0d9347348cd35"
+  }
+}

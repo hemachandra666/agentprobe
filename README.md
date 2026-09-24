@@ -253,6 +253,21 @@ The released weights match final checkpoint 217 (one epoch). The historical
 evaluation of the downloadable package. The exact training-time base revision
 remains unverified. See the packaged model card for provenance and limitations.
 
+## Version 2 experiment
+
+A fresh dataset uses associative/commutative expression grouping and excludes
+the packaged v1 expression groups. Checkpoint selection uses validation loss.
+
+On 760 test tasks, the teacher achieved 98.42% task success, the untuned
+student 16.18%, and the tuned student 94.87%. All 2,280 saved trajectories
+were replay-audited against the v2 dataset.
+
+These results describe one synthetic arithmetic experiment. V1 and v2 use
+different datasets; their headline scores are not a controlled comparison.
+
+See [the v2 experiment details](docs/EXPERIMENT_V2.md) and
+[recorded evidence](docs/results/experiment-v2/).
+
 ## Dashboard
 
 ```bash
