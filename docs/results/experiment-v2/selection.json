@@ -1,0 +1,9 @@
+{
+  "selection": "minimum_validation_loss",
+  "best_model_checkpoint": "/home/kumar/agentprobe/backups/experiment-v2/selected_adapter/checkpoint-353",
+  "best_metric": 0.13024970889091492,
+  "global_step": 1059,
+  "training_manifest_sha256": "31804ac97f7bd3913d2fb656e666fe15ad623570ee229c231766e1ea73be4202",
+  "epochs_requested": 3,
+  "max_steps_requested": -1
+}
