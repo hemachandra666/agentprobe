@@ -1,0 +1,11 @@
+{
+  "status": "complete",
+  "kind": "model_development_evaluation",
+  "suite_version": "refund-development-1",
+  "planned_cases": 16,
+  "completed_cases": 16,
+  "successful_cases": 5,
+  "unattempted_cases": [],
+  "task_success_rate": 0.3125,
+  "interpretation": "Public synthetic development fixtures, not held-out or real-customer performance."
+}

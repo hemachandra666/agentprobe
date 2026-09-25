@@ -1,0 +1,22 @@
+{
+  "status": "complete",
+  "kind": "model_development_evaluation",
+  "suite_version": "refund-development-1",
+  "planned_cases": 16,
+  "prompt_version": "refund-prompt-2",
+  "scorer_version": "refund-scorer-2",
+  "metric_counts": {
+    "decision_correct": 6,
+    "reason_correct": 1,
+    "order_id_correct": 1,
+    "policy_version_correct": 4,
+    "final_exact_match": 1,
+    "evidence_supported": 1,
+    "allowed_tools_only": 16
+  },
+  "completed_cases": 16,
+  "successful_cases": 1,
+  "unattempted_cases": [],
+  "task_success_rate": 0.0625,
+  "interpretation": "Public synthetic development fixtures, not held-out or real-customer performance."
+}

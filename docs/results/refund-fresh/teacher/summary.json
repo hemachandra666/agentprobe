@@ -1,0 +1,28 @@
+{
+  "status": "complete",
+  "kind": "model_synthetic_evaluation",
+  "suite_version": "refund-fresh-1",
+  "planned_cases": 28,
+  "prompt_version": "refund-prompt-3",
+  "scorer_version": "refund-scorer-2",
+  "metric_counts": {
+    "decision_correct": 13,
+    "reason_correct": 10,
+    "order_id_correct": 26,
+    "policy_version_correct": 25,
+    "final_exact_match": 10,
+    "evidence_supported": 24,
+    "allowed_tools_only": 26
+  },
+  "gate_counts": {
+    "allowed": 10,
+    "blocked": 18,
+    "incorrect_allowed": 0,
+    "correct_blocked": 0
+  },
+  "completed_cases": 28,
+  "successful_cases": 10,
+  "unattempted_cases": [],
+  "task_success_rate": 0.35714285714285715,
+  "interpretation": "Synthetic known-family cases; fresh instances use a frozen prompt, not a new-domain or real-customer benchmark."
+}
