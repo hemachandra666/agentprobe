@@ -1,0 +1,13 @@
+{
+  "load_seconds": 6.030595359996369,
+  "gpu": "NVIDIA GeForce RTX 5080 Laptop GPU",
+  "cuda_runtime": "12.8",
+  "packages": {
+    "torch": "2.8.0+cu128",
+    "unsloth": "2026.9.8",
+    "transformers": "5.5.0",
+    "peft": "0.21.0"
+  },
+  "variant": "original",
+  "optimization_setup_seconds": 1.8119972082786262e-06
+}
