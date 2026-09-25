@@ -268,6 +268,32 @@ different datasets; their headline scores are not a controlled comparison.
 See [the v2 experiment details](docs/EXPERIMENT_V2.md) and
 [recorded evidence](docs/results/experiment-v2/).
 
+## Measured GPU optimization
+
+An optional quantization-scale cache was evaluated on an NVIDIA GeForce
+RTX 5080 Laptop GPU using 18 development tasks. Four unprofiled runs in
+original/cached/cached/original order produced 108 measured task runs per variant.
+
+| Metric | Original | Cached scales |
+|---|---:|---:|
+| Median task latency | 2.341 s | 1.976 s |
+| p95 task latency | 5.541 s | 4.503 s |
+| Tasks per timed second | 0.3654 | 0.4337 |
+| Successful measured runs | 102/108 | 102/108 |
+
+Observed median latency decreased by **15.6%** and task throughput increased
+by **18.7%**, using **62.7 MiB additional peak PyTorch allocated memory**.
+All 288 recorded trajectories, including warmup, matched across variants
+in responses, tool steps, final answers, and termination.
+
+These measurements cover repeated development tasks on one laptop. They
+exclude loading and warmup and do not establish production throughput,
+cross-device speedups, or savings against the teacher. The cache remains opt-in.
+
+See the [results and limitations](docs/GPU_SCALE_CACHE_RESULTS.md),
+[benchmark instructions](docs/GPU_BENCHMARK.md), and
+[optimization implementation](docs/QUANT_SCALE_EXPERIMENT.md).
+
 ## Dashboard
 
 ```bash
