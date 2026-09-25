@@ -1,7 +1,8 @@
 # Version-2 experiment protocol
 
 This is a new benchmark, not a corrected denominator for v1. V1 data, adapter,
-release and 2,277 historical traces remain unchanged. No v2 GPU result is claimed.
+release and 2,277 historical traces remain unchanged. Recorded v2 results appear
+below; later GPU optimization measurements are documented separately.
 
 ## Split policy
 

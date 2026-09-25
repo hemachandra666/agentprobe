@@ -51,5 +51,6 @@ def test_prompt_v2_regression_is_preserved_and_scores_reproduce():
         assert row['steps'] == []
         assert row['final'] == {'decision': 'needs_review', 'reason': 'missing_order_id',
                                 'order_id': None, 'policy_version': None}
-        assert score(cases[row['case_id']], row) == row['score']
+        updated = score(cases[row['case_id']], row)
+        assert {k: v for k, v in updated.items() if k != 'scorer_version'} == {k: v for k, v in row['score'].items() if k != 'scorer_version'}
     assert sum(row['score']['task_success'] for row in rows) == 1

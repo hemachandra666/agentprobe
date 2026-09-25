@@ -9,6 +9,7 @@ from . import agent, student_agent, scorer, engine
 from .tasks_io import load_test
 from .trajectory import Trajectory
 from .process_provider import ProcessProvider
+from .provenance import capture, adapter_identity
 
 SCORER_VERSION = "2.0"
 
@@ -114,7 +115,13 @@ def main(default_models=None):
                 "traces_file": "comparison_runs.jsonl"}
     (out / "comparison.json").write_text(json.dumps(metadata, indent=2))
     results = []
+    identity = None
     try:
+        metadata['provenance'] = capture()
+        if 'tuned' in args.models:
+            identity = adapter_identity(adapter_dir or student_agent.ADAPTER_DIR)
+            metadata['adapter_identity'] = identity
+        (out / "comparison.json").write_text(json.dumps(metadata, indent=2))
         with (out / "comparison_runs.jsonl").open("w") as trace_file:
             for name in args.models:
                 if name == "tuned":
@@ -133,6 +140,11 @@ def main(default_models=None):
                     result = eval_provider(factory, label, tasks, args.runs, experiment, trace_file)
                 results.append(result)
                 print(label, result["task_success_rate"])
+        if identity is not None:
+            after = adapter_identity(identity['directory'])
+            metadata['adapter_identity_after'] = after
+            if after != identity:
+                raise RuntimeError('adapter files changed during evaluation; evidence retained')
         metadata["status"] = "complete"
     except (Exception, KeyboardInterrupt) as e:
         metadata.update(status="failed", error=str(e))

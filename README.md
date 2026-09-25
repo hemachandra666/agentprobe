@@ -2,11 +2,35 @@
 
 # AgentProbe
 
-AgentProbe evaluates calculator-agent runs, recording tool actions, final answers,
-completion, errors, and repeated calls. It includes a teacher/student fine-tuning
-experiment and an untuned baseline. This is an experimental evaluation project.
+AgentProbe is an experimental evaluation project for tool-using agents. It
+separates task completion from correctness, preserves failure traces, and tests
+whether GPU optimizations change agent behavior.
 
-## Result status
+## Current experiments
+
+| Experiment | Recorded result | Evidence |
+|---|---|---|
+| V2 arithmetic distillation | Tuned student: 721/760 tasks (94.87%) | [V2 protocol and results](docs/EXPERIMENT_V2.md) |
+| GPU scale cache | 15.6% lower median latency; 62.7 MiB additional peak allocated memory | [Measurements and limits](docs/GPU_SCALE_CACHE_RESULTS.md) |
+| Refund workflow | Model: 10/28 strict successes; checker allowed 10 and blocked 18 | [Refund results](docs/REFUND_STAGE_RESULTS.md) |
+
+These are separate experiments, not a combined score. Refund checker blocks do
+not become model successes. The GPU result covers repeated development tasks
+on one laptop. This repository does not establish production readiness.
+
+Try the refund harness without a model or GPU:
+
+```bash
+uv run --locked python -m agentprobe.refund_benchmark --smoke --suite fresh
+```
+
+This is a scripted harness check, not model accuracy. See the
+[refund workflow](docs/REFUND_WORKFLOW.md) for live-model evaluation instructions.
+
+The [Student v2 release](https://github.com/hemachandra666/agentprobe/releases/tag/student-v2.0.0)
+contains the v2 adapter. The v1 instructions below preserve the earlier experiment.
+
+## Historical v1 result
 
 **Scorer 2.0 evaluation completed on September 22, 2026, using 759 held-out
 tasks and one run per task for each model.**
@@ -70,7 +94,7 @@ uv run --locked python -m agentprobe.check_leakage
 uv run --locked python -m agentprobe.replay --input docs/results/2026-09-22/comparison_runs.jsonl
 ```
 
-The consolidated reliability suite passes 91 CPU tests. The supplied dataset contains 1,441
+Run the test suite above for the current test count. The supplied dataset contains 1,441
 training questions and 759 test questions, with zero exact question overlap
 and zero within-split duplicates.
 
@@ -176,8 +200,8 @@ observations. Preparation validates each saved task against the canonical traini
 dataset, recomputes successful tool arithmetic, and rejects corrupted examples
 before writing outputs. A manifest hashes both files. `train_student` rejects stale inputs.
 
-The current trainer saves the final adapter; automatic selection of the best
-validation checkpoint remains an improvement.
+The trainer saves the final adapter by default. Use `--select-best` in a new
+output directory to select the minimum-validation-loss checkpoint, as in v2.
 
 Keep final-test tasks out of checkpoint/hyperparameter selection. Further
 changes informed by the inspected test failures require a fresh held-out
@@ -318,7 +342,7 @@ as validated current results.
 
 ## Limits and interpretation
 
-- Only two calculator tools and synthetic integer chains are covered. Correct
+- Arithmetic covers two calculator tools and synthetic integer chains. Correct
   final answers do not prove general reasoning or appropriate intermediate arguments.
 - Fixed reference paths are diagnostics, not a proof that other paths are invalid.
 - Untuned performance measures this exact prompt, protocol and parser. It does
@@ -333,16 +357,17 @@ as validated current results.
   The two held-out task families account for 400 of the 759 test tasks.
 - Zero tool execution errors does not mean zero parsing errors or incorrect
   answers. These metrics must be interpreted separately.
-- Sampling uncertainty, multiple training seeds, broader task domains, and controlled
-  GPU memory/latency measurements remain future work. Smaller parameter count alone
+- Sampling uncertainty, multiple training seeds, broader real-world domains, and
+  cross-device GPU measurements remain future work. Smaller parameter count alone
   does not demonstrate measured performance savings.
 - Student comparisons use spawned inference workers that are terminated and joined
   on timeout and closed between models. Direct custom-provider calls retain the
   thread fallback, and Ollama server-side cancellation remains separate.
   See [process isolation and GPU verification](docs/PROCESS_TIMEOUT.md).
 - Ollama requests use a timeout and fixed generation options. Students use greedy
-  generation with an output-token cap. Immutable model revisions, adapter hashes,
-  and a complete GPU dependency lock remain reproducibility improvements.
+  generation with an output-token cap. New arithmetic comparisons record adapter hashes before and after evaluation,
+  source hashes, package versions and Git state. Remote model revisions remain
+  unpinned; a complete portable GPU dependency lock remains future work.
 
 See [the implementation handoff](docs/FIX_HANDOFF.md) for the original changes
 and planned checks. GPU training and evaluation have since completed as
