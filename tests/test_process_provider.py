@@ -70,6 +70,12 @@ def test_comparison_cli_owns_worker_and_preserves_evidence(tmp_path, monkeypatch
     import sys
     import multiprocessing
     from agentprobe import compare
+    adapter = tmp_path / 'adapter'
+    adapter.mkdir()
+    for name in ['adapter_model.safetensors', 'tokenizer.json', 'tokenizer_config.json', 'chat_template.jinja']:
+        (adapter / name).write_text('scripted fixture')
+    (adapter / 'adapter_config.json').write_text('{}')
+    monkeypatch.setattr(compare.student_agent, 'ADAPTER_DIR', str(adapter))
     monkeypatch.setattr(compare.student_agent, 'StudentProvider', factory)
     monkeypatch.setattr(sys, 'argv', ['compare', '--models', 'tuned', '--max-tasks', '1', '--output-dir', str(tmp_path)])
     before = {p.pid for p in multiprocessing.active_children()}

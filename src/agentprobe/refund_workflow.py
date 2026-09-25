@@ -7,7 +7,7 @@ import time
 
 VERSION = 'refund-development-1'
 PROMPT_VERSION = 'refund-prompt-3'
-SCORER_VERSION = 'refund-scorer-2'
+SCORER_VERSION = 'refund-scorer-3'
 POLICY = {
     'version': 'fictional-refunds-1',
     'return_window_days': 30,
@@ -190,7 +190,7 @@ def score(case, record):
         failed = order_reads if case.order_failures else policy_reads
         supported = (bool(case.order_failures) or order_ok) and len([
             s for s in failed if s['result'] == {'status': 'error', 'error': 'temporarily_unavailable', 'retryable': True}
-        ]) >= 2
+        ]) == 2 and len(failed) == 2
     else:
         supported = (any(s['result'] == {'status': 'ok', 'order': case.order} for s in order_reads)
                      and any(s['result'] == {'status': 'ok', 'policy': POLICY} for s in policy_reads))
