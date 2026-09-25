@@ -1,0 +1,372 @@
+{
+  "adapter_dir": "/home/kumar/agentprobe/backups/releases/agentprobe-student-v2",
+  "adapter_hashes": {
+    "adapter_model.safetensors": "8ad64ebe7be9ac555c5bcca78698bfa7c51f9a0c84cb048d655883866537b8ba",
+    "adapter_config.json": "8da029224be61d7530a5833b547616ad1acfaee0aff04024c1bba0fe0ad6ccb2",
+    "tokenizer.json": "6b4360dd6a184650ffc48056c2569bc603f896c5adfe94b10f1c79f809638aa5",
+    "tokenizer_config.json": "94ed43b64420956feda63256cfc98863c824f59f3cf1fe1700c648d87f3fef10",
+    "chat_template.jinja": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f"
+  },
+  "train_file_sha256": "83a00ced21704bad3abfad920e2a483e27fd426fe79a957377bf4869e2e9ba91",
+  "tasks": [
+    {
+      "task_id": "v2_f_add__0076",
+      "family": "f_add",
+      "question": "Add 61 and 73.",
+      "reference_tools": [
+        "add"
+      ],
+      "numbers": [
+        61,
+        73
+      ],
+      "min_steps": 1,
+      "answer": 134.0
+    },
+    {
+      "task_id": "v2_f_mul_add__0159",
+      "family": "f_mul_add",
+      "question": "Multiply 47 by 12, then add 44.",
+      "reference_tools": [
+        "multiply",
+        "add"
+      ],
+      "numbers": [
+        47,
+        12,
+        44
+      ],
+      "min_steps": 2,
+      "answer": 608.0
+    },
+    {
+      "task_id": "v2_f_mul__0035",
+      "family": "f_mul",
+      "question": "Multiply 22 by 17.",
+      "reference_tools": [
+        "multiply"
+      ],
+      "numbers": [
+        22,
+        17
+      ],
+      "min_steps": 1,
+      "answer": 374.0
+    },
+    {
+      "task_id": "v2_f_add_mul__0094",
+      "family": "f_add_mul",
+      "question": "Add 83 and 14, then multiply by 57.",
+      "reference_tools": [
+        "add",
+        "multiply"
+      ],
+      "numbers": [
+        83,
+        14,
+        57
+      ],
+      "min_steps": 2,
+      "answer": 5529.0
+    },
+    {
+      "task_id": "v2_f_add_mul_add__0164",
+      "family": "f_add_mul_add",
+      "question": "Add 19 and 54, then multiply by 87, then add 27.",
+      "reference_tools": [
+        "add",
+        "multiply",
+        "add"
+      ],
+      "numbers": [
+        19,
+        54,
+        87,
+        27
+      ],
+      "min_steps": 3,
+      "answer": 6378.0
+    },
+    {
+      "task_id": "v2_f_mul_add__0035",
+      "family": "f_mul_add",
+      "question": "Multiply 51 by 76, then add 71.",
+      "reference_tools": [
+        "multiply",
+        "add"
+      ],
+      "numbers": [
+        51,
+        76,
+        71
+      ],
+      "min_steps": 2,
+      "answer": 3947.0
+    },
+    {
+      "task_id": "v2_f_add_mul_add__0120",
+      "family": "f_add_mul_add",
+      "question": "Add 22 and 34, then multiply by 21, then add 94.",
+      "reference_tools": [
+        "add",
+        "multiply",
+        "add"
+      ],
+      "numbers": [
+        22,
+        34,
+        21,
+        94
+      ],
+      "min_steps": 3,
+      "answer": 1270.0
+    },
+    {
+      "task_id": "v2_f_len5_a__0104",
+      "family": "f_len5_a",
+      "question": "Add 2 and 3, then multiply by 86, then add 64, then multiply by 97, then add 17.",
+      "reference_tools": [
+        "add",
+        "multiply",
+        "add",
+        "multiply",
+        "add"
+      ],
+      "numbers": [
+        2,
+        3,
+        86,
+        64,
+        97,
+        17
+      ],
+      "min_steps": 5,
+      "answer": 47935.0
+    },
+    {
+      "task_id": "v2_f_mul_mul__0057",
+      "family": "f_mul_mul",
+      "question": "Multiply 4 by 74, then multiply by 76.",
+      "reference_tools": [
+        "multiply",
+        "multiply"
+      ],
+      "numbers": [
+        4,
+        74,
+        76
+      ],
+      "min_steps": 2,
+      "answer": 22496.0
+    },
+    {
+      "task_id": "v2_f_add_mul__0109",
+      "family": "f_add_mul",
+      "question": "Add 96 and 68, then multiply by 64.",
+      "reference_tools": [
+        "add",
+        "multiply"
+      ],
+      "numbers": [
+        96,
+        68,
+        64
+      ],
+      "min_steps": 2,
+      "answer": 10496.0
+    },
+    {
+      "task_id": "v2_f_add_mul_add_mul__0007",
+      "family": "f_add_mul_add_mul",
+      "question": "Add 70 and 13, then multiply by 83, then add 20, then multiply by 8.",
+      "reference_tools": [
+        "add",
+        "multiply",
+        "add",
+        "multiply"
+      ],
+      "numbers": [
+        70,
+        13,
+        83,
+        20,
+        8
+      ],
+      "min_steps": 4,
+      "answer": 55272.0
+    },
+    {
+      "task_id": "v2_f_add_add__0015",
+      "family": "f_add_add",
+      "question": "Add 53 and 81, then add 75.",
+      "reference_tools": [
+        "add",
+        "add"
+      ],
+      "numbers": [
+        53,
+        81,
+        75
+      ],
+      "min_steps": 2,
+      "answer": 209.0
+    },
+    {
+      "task_id": "v2_f_add__0156",
+      "family": "f_add",
+      "question": "Add 54 and 5.",
+      "reference_tools": [
+        "add"
+      ],
+      "numbers": [
+        54,
+        5
+      ],
+      "min_steps": 1,
+      "answer": 59.0
+    },
+    {
+      "task_id": "v2_f_len5_a__0062",
+      "family": "f_len5_a",
+      "question": "Add 29 and 60, then multiply by 47, then add 76, then multiply by 32, then add 87.",
+      "reference_tools": [
+        "add",
+        "multiply",
+        "add",
+        "multiply",
+        "add"
+      ],
+      "numbers": [
+        29,
+        60,
+        47,
+        76,
+        32,
+        87
+      ],
+      "min_steps": 5,
+      "answer": 136375.0
+    },
+    {
+      "task_id": "v2_f_add_add__0081",
+      "family": "f_add_add",
+      "question": "Add 99 and 50, then add 37.",
+      "reference_tools": [
+        "add",
+        "add"
+      ],
+      "numbers": [
+        99,
+        50,
+        37
+      ],
+      "min_steps": 2,
+      "answer": 186.0
+    },
+    {
+      "task_id": "v2_f_mul_mul__0116",
+      "family": "f_mul_mul",
+      "question": "Multiply 96 by 33, then multiply by 72.",
+      "reference_tools": [
+        "multiply",
+        "multiply"
+      ],
+      "numbers": [
+        96,
+        33,
+        72
+      ],
+      "min_steps": 2,
+      "answer": 228096.0
+    },
+    {
+      "task_id": "v2_f_add_mul_add_mul__0176",
+      "family": "f_add_mul_add_mul",
+      "question": "Add 86 and 76, then multiply by 55, then add 45, then multiply by 49.",
+      "reference_tools": [
+        "add",
+        "multiply",
+        "add",
+        "multiply"
+      ],
+      "numbers": [
+        86,
+        76,
+        55,
+        45,
+        49
+      ],
+      "min_steps": 4,
+      "answer": 438795.0
+    },
+    {
+      "task_id": "v2_f_mul__0078",
+      "family": "f_mul",
+      "question": "Multiply 7 by 86.",
+      "reference_tools": [
+        "multiply"
+      ],
+      "numbers": [
+        7,
+        86
+      ],
+      "min_steps": 1,
+      "answer": 602.0
+    }
+  ],
+  "per_family": 2,
+  "repeats": 3,
+  "seed": 73,
+  "task_timeout": 60,
+  "suite_timeout": 1800,
+  "profile": false,
+  "cache_quant_scales": false,
+  "scope": "Development training-pool workload; not held-out accuracy or production throughput.",
+  "git_commit": {
+    "returncode": 0,
+    "stdout": "2aed357073c404861e6f5410917e147cb72e8f20\n",
+    "stderr": ""
+  },
+  "git_status": {
+    "returncode": 0,
+    "stdout": "?? docs/GPU_BENCHMARK.md\n?? docs/QUANT_SCALE_EXPERIMENT.md\n?? src/agentprobe/gpu_benchmark.py\n?? src/agentprobe/quant_scale_experiment.py\n?? tests/test_gpu_benchmark.py\n?? tests/test_quant_scale_experiment.py\n",
+    "stderr": ""
+  },
+  "source_hashes": {
+    "scorer.py": "7274b89cc43344e51f5f8cffd88925922d9224b048a64ae75a7183b94c8bab80",
+    "run_eval.py": "e5d617cda9661fa9d4ce5a0a666b9a881af064a004a562b12e23d704eeb6e67a",
+    "tools.py": "00c89fbf83820f99bc37f55bea502219e133c07c26f9ed67948c855994754ada",
+    "task_gen.py": "4959ef03bba46837dba0e0979cee3e7ab731e0711ec7776ee96aac5843d54dfb",
+    "spans.py": "f20a1c402848ee7c7149e4d1c08cf4ce6c40d10532a8857bd9ee397907218d2a",
+    "prepare_training.py": "b78f32bfb31606abb049805fcf12c9ab877acc0c2a71620e8dbbc56358d00ff5",
+    "quant_scale_experiment.py": "ca7abe58add05e92b037f134917576e235ebb920a387ffc43baf69d51a1ee1e5",
+    "export_student.py": "22a3bf1963952170fd742091611ac0147b67730b307117ac25819c1b6c8b129f",
+    "agent.py": "75859f476a9d22ef9bfca8bc0dea30182d912b2402be83a925c502dc7981561c",
+    "task_suite.py": "26046efcba684d0862ca279029dba8d651e4cd5c6c547e2c7d980c5333193836",
+    "check_process_timeout.py": "15b63c2d401e40e3f2badc1746b9619684d0c97b225e61c0548e7508f7b20253",
+    "benchmark.py": "26c18c887fb4b1e80e90d9514285645dd555561f70a95d8caf4a14014610ec90",
+    "replay.py": "d7fb2caa0b0f0f5c6fa08fbe0ba5a474773dd034d910a912688eac92a5ff3025",
+    "train_student.py": "22fa2b5c297b4a74c8fac305c69266f6e9a9b90796b22ba6855fc25294b444b7",
+    "model.py": "c12576614ae944a07a70251a3ea5506e6cd8dcb42d5f5599638c543a932597bc",
+    "tasks_io.py": "38354f952dd4fd53e8e749b5551763d1c07f892238c27736fae2ad621e3d91a2",
+    "student_agent.py": "98693cc02b5a994b0465cf0f5071e6082c9ecc74acfed281b771b3362b4fdaf1",
+    "trajectory.py": "c217b0569135eae3d004cf302bfd36c001fea277a603f162f3e5b28086b03518",
+    "dataset_v2.py": "53cb08675097f3271574ea209dcb45fe69e1098f5d3cff51ef7d7b3b07d86fb5",
+    "generate_teacher.py": "e3b4370d65f90f73efbaec4df5eb0e2b30a5d5397180df487b2a5e9b9a17abdb",
+    "prepare_v2.py": "7bede8d9036355df9d6bf384054c6212bcb103b3bbed1ce5fce8885475a0320d",
+    "check_leakage.py": "eeb7c32322a4ef69c66cae26f3aa23e18042fe206b67aa1205ccf52d42509d5f",
+    "compare.py": "d032ef88636d33f9b71e7192bb8d7ceec9b17b7e26e173ac5e1cc0a9f4229db7",
+    "gpu_benchmark.py": "ef5daca039a6051d2ee2c9a1ff700421e52f7ecef5462ceaf8486c468b9b83f2",
+    "engine.py": "d595afdc2e841867e3e9f1e6310e4094334508156c5d8b7fe67ef734b3210a2d",
+    "__init__.py": "b799d85d5327739ccec1a5d104de1558a442d230ed62b4d1395fde3c6f11c770",
+    "evidence.py": "4caa6c3da7f01b75379441282a27cd8e005ec6fb4793fbc5b22cc88f70f8ec7e",
+    "peek_student.py": "1eb300770045ebd1da5c78193411da2f4be53eb984174f680dfe6dfdbf222271",
+    "process_provider.py": "ed6f48acc94162b256e2277f2b0fb7886f7be5a1f5a180f77e138ef576fc62a4",
+    "dashboard.py": "942ead675dfca3659e61dab20efe17ce0b401019d8ce168f70af4421e3316d09"
+  },
+  "nvidia_smi": {
+    "returncode": 0,
+    "stdout": "Thu Sep 24 09:54:23 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 575.65                 Driver Version: 577.03         CUDA Version: 12.9     |\n|-----------------------------------------+------------------------+----------------------+\n| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 5080 ...    On  |   00000000:02:00.0 Off |                  N/A |\n| N/A   50C    P4             20W /   85W |       0MiB /  16303MiB |      0%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n                                                                                         \n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|  No running processes found                                                             |\n+-----------------------------------------------------------------------------------------+\n",
+    "stderr": ""
+  }
+}

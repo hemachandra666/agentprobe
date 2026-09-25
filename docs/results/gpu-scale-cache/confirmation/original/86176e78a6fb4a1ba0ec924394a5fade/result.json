@@ -1,0 +1,25 @@
+{
+  "status": "complete",
+  "mode": "baseline",
+  "load_seconds": 6.098738832995878,
+  "gpu": "NVIDIA GeForce RTX 5080 Laptop GPU",
+  "cuda_runtime": "12.8",
+  "packages": {
+    "torch": "2.8.0+cu128",
+    "unsloth": "2026.9.8",
+    "transformers": "5.5.0",
+    "peft": "0.21.0"
+  },
+  "variant": "original",
+  "optimization_setup_seconds": 1.1930023902095854e-06,
+  "measured_runs": 54,
+  "successful_runs": 51,
+  "task_success_rate": 0.9444444444444444,
+  "median_task_seconds": 2.235888490497018,
+  "p95_task_seconds": 5.311910042000818,
+  "task_seconds_sum": 142.57008726302593,
+  "tasks_per_timed_second": 0.3787610784047289,
+  "successful_tasks_per_timed_second": 0.35771879627113284,
+  "peak_allocated_bytes": 1760668160,
+  "peak_reserved_bytes": 1799356416
+}

@@ -1,0 +1,41 @@
+{
+  "status": "complete",
+  "mode": "baseline",
+  "load_seconds": 5.596646179998061,
+  "gpu": "NVIDIA GeForce RTX 5080 Laptop GPU",
+  "cuda_runtime": "12.8",
+  "packages": {
+    "torch": "2.8.0+cu128",
+    "unsloth": "2026.9.8",
+    "transformers": "5.5.0",
+    "peft": "0.21.0"
+  },
+  "variant": "cached_quant_scales",
+  "optimization_setup_seconds": 0.2525415209966013,
+  "scale_cache_preflight": {
+    "source_ast_sha256": "fe8726dc6cd21cb252097ee74ab0a3c0358624a6b5368b1113b75baf971bc5e3",
+    "checked_vectors": 340,
+    "cached_quantization_states": 170,
+    "scale_cache_bytes": 65716224,
+    "inference_gemv_calls": 0,
+    "preflight": "exact tensor equality on zero and random vectors per NF4 weight"
+  },
+  "scale_cache_final": {
+    "source_ast_sha256": "fe8726dc6cd21cb252097ee74ab0a3c0358624a6b5368b1113b75baf971bc5e3",
+    "checked_vectors": 340,
+    "cached_quantization_states": 170,
+    "scale_cache_bytes": 65716224,
+    "inference_gemv_calls": 527680,
+    "preflight": "exact tensor equality on zero and random vectors per NF4 weight"
+  },
+  "measured_runs": 54,
+  "successful_runs": 51,
+  "task_success_rate": 0.9444444444444444,
+  "median_task_seconds": 1.983783306000987,
+  "p95_task_seconds": 4.441402467993612,
+  "task_seconds_sum": 124.63591512500716,
+  "tasks_per_timed_second": 0.43326195299195386,
+  "successful_tasks_per_timed_second": 0.40919184449240087,
+  "peak_allocated_bytes": 1826384384,
+  "peak_reserved_bytes": 1864368128
+}

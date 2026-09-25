@@ -1,0 +1,149 @@
+{
+  "scope": "Four unprofiled runs in original/cached/cached/original order; 18 development tasks repeated three times per run, same laptop and software. Not independent task samples or held-out accuracy.",
+  "audit": {
+    "runs": 4,
+    "total_trajectories": 288,
+    "measured_trajectories": 216,
+    "scores_recomputed": 288,
+    "behavior_differences": 0,
+    "matching_inputs_and_source_hashes": true
+  },
+  "runs": [
+    {
+      "path": "confirmation/original/86176e78a6fb4a1ba0ec924394a5fade",
+      "variant": "original",
+      "first_trajectory_started_at": 1790257508.386356,
+      "summary": {
+        "measured_runs": 54,
+        "successful_runs": 51,
+        "task_success_rate": 0.9444444444444444,
+        "median_task_seconds": 2.235888490497018,
+        "p95_task_seconds": 5.311910042000818,
+        "task_seconds_sum": 142.57008726302593,
+        "tasks_per_timed_second": 0.3787610784047289,
+        "successful_tasks_per_timed_second": 0.35771879627113284,
+        "peak_allocated_bytes": 1760668160,
+        "peak_reserved_bytes": 1799356416
+      }
+    },
+    {
+      "path": "confirmation/cached/7a9769f7be8f4994b2a1deb0a0f4fb67",
+      "variant": "cached_quant_scales",
+      "first_trajectory_started_at": 1790257714.2910564,
+      "summary": {
+        "measured_runs": 54,
+        "successful_runs": 51,
+        "task_success_rate": 0.9444444444444444,
+        "median_task_seconds": 1.9732242405007128,
+        "p95_task_seconds": 4.557359177997569,
+        "task_seconds_sum": 124.37890184301796,
+        "tasks_per_timed_second": 0.4341572340633373,
+        "successful_tasks_per_timed_second": 0.41003738772648524,
+        "peak_allocated_bytes": 1826384384,
+        "peak_reserved_bytes": 1864368128
+      }
+    },
+    {
+      "path": "confirmation/cached/b0c1e1dbd3dd40ad862b88c049813b4a",
+      "variant": "cached_quant_scales",
+      "first_trajectory_started_at": 1790257894.810192,
+      "summary": {
+        "measured_runs": 54,
+        "successful_runs": 51,
+        "task_success_rate": 0.9444444444444444,
+        "median_task_seconds": 1.983783306000987,
+        "p95_task_seconds": 4.441402467993612,
+        "task_seconds_sum": 124.63591512500716,
+        "tasks_per_timed_second": 0.43326195299195386,
+        "successful_tasks_per_timed_second": 0.40919184449240087,
+        "peak_allocated_bytes": 1826384384,
+        "peak_reserved_bytes": 1864368128
+      }
+    },
+    {
+      "path": "confirmation/original/ad7e5468e82b41cbb4e6634236932d3e",
+      "variant": "original",
+      "first_trajectory_started_at": 1790258075.5244944,
+      "summary": {
+        "measured_runs": 54,
+        "successful_runs": 51,
+        "task_success_rate": 0.9444444444444444,
+        "median_task_seconds": 2.4071008384999004,
+        "p95_task_seconds": 5.688941137996153,
+        "task_seconds_sum": 153.00676757899055,
+        "tasks_per_timed_second": 0.35292556567553274,
+        "successful_tasks_per_timed_second": 0.3333185898046698,
+        "peak_allocated_bytes": 1760668160,
+        "peak_reserved_bytes": 1799356416
+      }
+    }
+  ],
+  "pooled": {
+    "original": {
+      "measured_runs": 108,
+      "successful_runs": 102,
+      "task_success_rate": 0.9444444444444444,
+      "median_task_seconds": 2.3414539375007735,
+      "p95_task_seconds": 5.540898211998865,
+      "task_seconds_sum": 295.5768548420165,
+      "tasks_per_timed_second": 0.3653872021127133,
+      "successful_tasks_per_timed_second": 0.3450879131064515,
+      "peak_allocated_bytes": 1760668160,
+      "peak_reserved_bytes": 1799356416
+    },
+    "cached_quant_scales": {
+      "measured_runs": 108,
+      "successful_runs": 102,
+      "task_success_rate": 0.9444444444444444,
+      "median_task_seconds": 1.9762076750012056,
+      "p95_task_seconds": 4.502888180002628,
+      "task_seconds_sum": 249.01481696802512,
+      "tasks_per_timed_second": 0.4337091315086997,
+      "successful_tasks_per_timed_second": 0.4096141797582164,
+      "peak_allocated_bytes": 1826384384,
+      "peak_reserved_bytes": 1864368128
+    }
+  },
+  "percent_change_cached_vs_original": {
+    "median_task_seconds": -15.59912226543415,
+    "p95_task_seconds": -18.73360585741165,
+    "task_seconds_sum": -15.752937725411009,
+    "tasks_per_timed_second": 18.69850093296663,
+    "peak_allocated_bytes": 3.7324593863275135
+  },
+  "peak_allocated_increase_MiB": 62.671875,
+  "adapter_sha256": "8ad64ebe7be9ac555c5bcca78698bfa7c51f9a0c84cb048d655883866537b8ba",
+  "source_hashes": {
+    "scorer.py": "7274b89cc43344e51f5f8cffd88925922d9224b048a64ae75a7183b94c8bab80",
+    "run_eval.py": "e5d617cda9661fa9d4ce5a0a666b9a881af064a004a562b12e23d704eeb6e67a",
+    "tools.py": "00c89fbf83820f99bc37f55bea502219e133c07c26f9ed67948c855994754ada",
+    "task_gen.py": "4959ef03bba46837dba0e0979cee3e7ab731e0711ec7776ee96aac5843d54dfb",
+    "spans.py": "f20a1c402848ee7c7149e4d1c08cf4ce6c40d10532a8857bd9ee397907218d2a",
+    "prepare_training.py": "b78f32bfb31606abb049805fcf12c9ab877acc0c2a71620e8dbbc56358d00ff5",
+    "quant_scale_experiment.py": "ca7abe58add05e92b037f134917576e235ebb920a387ffc43baf69d51a1ee1e5",
+    "export_student.py": "22a3bf1963952170fd742091611ac0147b67730b307117ac25819c1b6c8b129f",
+    "agent.py": "75859f476a9d22ef9bfca8bc0dea30182d912b2402be83a925c502dc7981561c",
+    "task_suite.py": "26046efcba684d0862ca279029dba8d651e4cd5c6c547e2c7d980c5333193836",
+    "check_process_timeout.py": "15b63c2d401e40e3f2badc1746b9619684d0c97b225e61c0548e7508f7b20253",
+    "benchmark.py": "26c18c887fb4b1e80e90d9514285645dd555561f70a95d8caf4a14014610ec90",
+    "replay.py": "d7fb2caa0b0f0f5c6fa08fbe0ba5a474773dd034d910a912688eac92a5ff3025",
+    "train_student.py": "22fa2b5c297b4a74c8fac305c69266f6e9a9b90796b22ba6855fc25294b444b7",
+    "model.py": "c12576614ae944a07a70251a3ea5506e6cd8dcb42d5f5599638c543a932597bc",
+    "tasks_io.py": "38354f952dd4fd53e8e749b5551763d1c07f892238c27736fae2ad621e3d91a2",
+    "student_agent.py": "98693cc02b5a994b0465cf0f5071e6082c9ecc74acfed281b771b3362b4fdaf1",
+    "trajectory.py": "c217b0569135eae3d004cf302bfd36c001fea277a603f162f3e5b28086b03518",
+    "dataset_v2.py": "53cb08675097f3271574ea209dcb45fe69e1098f5d3cff51ef7d7b3b07d86fb5",
+    "generate_teacher.py": "e3b4370d65f90f73efbaec4df5eb0e2b30a5d5397180df487b2a5e9b9a17abdb",
+    "prepare_v2.py": "7bede8d9036355df9d6bf384054c6212bcb103b3bbed1ce5fce8885475a0320d",
+    "check_leakage.py": "eeb7c32322a4ef69c66cae26f3aa23e18042fe206b67aa1205ccf52d42509d5f",
+    "compare.py": "d032ef88636d33f9b71e7192bb8d7ceec9b17b7e26e173ac5e1cc0a9f4229db7",
+    "gpu_benchmark.py": "ef5daca039a6051d2ee2c9a1ff700421e52f7ecef5462ceaf8486c468b9b83f2",
+    "engine.py": "d595afdc2e841867e3e9f1e6310e4094334508156c5d8b7fe67ef734b3210a2d",
+    "__init__.py": "b799d85d5327739ccec1a5d104de1558a442d230ed62b4d1395fde3c6f11c770",
+    "evidence.py": "4caa6c3da7f01b75379441282a27cd8e005ec6fb4793fbc5b22cc88f70f8ec7e",
+    "peek_student.py": "1eb300770045ebd1da5c78193411da2f4be53eb984174f680dfe6dfdbf222271",
+    "process_provider.py": "ed6f48acc94162b256e2277f2b0fb7886f7be5a1f5a180f77e138ef576fc62a4",
+    "dashboard.py": "942ead675dfca3659e61dab20efe17ce0b401019d8ce168f70af4421e3316d09"
+  },
+  "input_archive_sha256": "86ab2c403db9f2313820cb665008722f7d5d48475d633353d253c9818847592f"
+}

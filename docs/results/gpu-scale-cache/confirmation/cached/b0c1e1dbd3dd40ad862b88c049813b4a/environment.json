@@ -1,0 +1,21 @@
+{
+  "load_seconds": 5.596646179998061,
+  "gpu": "NVIDIA GeForce RTX 5080 Laptop GPU",
+  "cuda_runtime": "12.8",
+  "packages": {
+    "torch": "2.8.0+cu128",
+    "unsloth": "2026.9.8",
+    "transformers": "5.5.0",
+    "peft": "0.21.0"
+  },
+  "variant": "cached_quant_scales",
+  "optimization_setup_seconds": 0.2525415209966013,
+  "scale_cache_preflight": {
+    "source_ast_sha256": "fe8726dc6cd21cb252097ee74ab0a3c0358624a6b5368b1113b75baf971bc5e3",
+    "checked_vectors": 340,
+    "cached_quantization_states": 170,
+    "scale_cache_bytes": 65716224,
+    "inference_gemv_calls": 0,
+    "preflight": "exact tensor equality on zero and random vectors per NF4 weight"
+  }
+}
